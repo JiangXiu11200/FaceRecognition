@@ -2,5 +2,6 @@
     "sys_config": {
         "height": 480,
         "width": 640
-    }
+    },
+	"debug": true
 }
