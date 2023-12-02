@@ -27,12 +27,13 @@ class FaceApp():
         fps = 0
         fps_count = 0
         fps_start_time = time.time()
-        # face_check_count = 0
         eyes_blink = [[], []]
         left_median = 1
         right_median = 1
         blink_state = False
         blink_count = 0
+        average_brightness = 0
+        grayscale_value = 0
         with self.mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5) as face_detection:
             while True:
                 try:
@@ -57,13 +58,22 @@ class FaceApp():
                             # face bounding box
                             face_box_x1, face_box_y1, face_box_x2, face_box_y2 = calculation.get_face_boundingbox(frame, bounding_box, self.width, self.height)
                             face_roi = frame[face_box_y1 : face_box_y2, face_box_x1 : face_box_x2]
+                            if average_brightness == 0:
+                                hsv_image = cv2.cvtColor(face_roi, cv2.COLOR_BGR2HSV)
+                                _, _, value = cv2.split(hsv_image)
+                                average_brightness = np.mean(value)
+                                if average_brightness > 120:
+                                    grayscale_value = 80
+                                else:
+                                    grayscale_value = 30
+
                             # eyes bounding box
                             eyes_left_x1, eyes_left_y1, eyes_left_x2, eyes_left_y2, \
                             eyes_right_x1, eyes_right_y1, eyes_right_x2, eyes_right_y2 = calculation.get_eyes_boundingbox(frame, detection, bounding_box.height, self.width, self.height)
                             eye_left_roi = frame[eyes_left_y1 : eyes_left_y2, eyes_left_x1 : eyes_left_x2]
                             eye_right_roi = frame[eyes_right_y1 : eyes_right_y2, eyes_right_x1 : eyes_right_x2]
                             # blink detection
-                            left_eye_gary, right_eye_gary =  calculation.grayscale_area(eye_left_roi, eye_right_roi)
+                            left_eye_gary, right_eye_gary =  calculation.grayscale_area(eye_left_roi, eye_right_roi, grayscale_value)
                             eyes_blink[0].append((left_eye_gary == 0).sum())
                             eyes_blink[1].append((right_eye_gary == 0).sum())
                         if len(eyes_blink[0]) > 15 and len(eyes_blink[1]) > 15:
@@ -99,6 +109,7 @@ class FaceApp():
                     else:
                         blink_count = 0
                         eyes_blink = [[], []]
+                        average_brightness = 0
                     cv2.putText(frame, str(fps), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
                     cv2.imshow("video_out", frame)
                     key = cv2.waitKey(1)
