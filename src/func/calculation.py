@@ -1,6 +1,5 @@
 import cv2
 import config
-import numpy as np
 
 class calculation:
     def get_face_boundingbox(frame, bounding_box, width, height):
@@ -10,7 +9,7 @@ class calculation:
         if config.debug:
             cv2.rectangle(frame, (bounding_x1, bounding_y1), (bounding_x2, bounding_y2), (0, 255, 0), 2)
         return bounding_x1, bounding_y1, bounding_x2, bounding_y2
-    
+
     def get_eyes_boundingbox(frame, detection, bounding_height, width, height):
         # eyes bounding box
         eye_left = detection.location_data.relative_keypoints[0]
@@ -37,8 +36,12 @@ class calculation:
             bounding_eye_right_x2,
             bounding_eye_right_y2
             )
-    
+
     def grayscale_area(eye_left_roi, eye_right_roi):
+        if eye_left_roi.size == 0:
+            eye_left_roi = eye_right_roi
+        elif eye_right_roi.size == 0:
+            eye_right_roi = eye_left_roi
         left_eye_gary = cv2.cvtColor(eye_left_roi, cv2.COLOR_BGR2GRAY)
         right_eye_gary = cv2.cvtColor(eye_right_roi, cv2.COLOR_BGR2GRAY)
         ret, left_eye_gary = cv2.threshold(left_eye_gary, 80, 255, cv2.THRESH_BINARY)

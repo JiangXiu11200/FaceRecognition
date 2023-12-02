@@ -4,7 +4,7 @@ import traceback
 from multiprocessing import Process, Queue
 from threading import Thread
 
-def video_capturer(video_queue, signal_queue):
+def get_rtsp(video_queue, signal_queue):
     try:
         cap = cv2.VideoCapture(0)
         ret, frame = cap.read()

@@ -8,9 +8,8 @@ import os
 import traceback
 import time
 from multiprocessing import Queue, Process
-from video_capturer import video_capturer
 from func import calculation, reco
-import config
+import config, video_capturer
 
 class FaceApp():
     def __init__(self):
@@ -21,7 +20,7 @@ class FaceApp():
         self.video_queue = Queue()
         self.signal_queue = Queue()
         self.mp_face_detection = mp.solutions.face_detection
-        video_capturer_proc = Process(target=video_capturer, args=(self.video_queue, self.signal_queue))
+        video_capturer_proc = Process(target=video_capturer.get_rtsp, args=(self.video_queue, self.signal_queue))
         video_capturer_proc.start()
 
     def run(self):
