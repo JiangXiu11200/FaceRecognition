@@ -34,7 +34,7 @@ def video_out(video_queue, signal_queue):
 if __name__ == "__main__":
     video_queue = Queue()
     signal_queue = Queue()
-    video_capturer_proc = Process(target=video_capturer, args=(video_queue, signal_queue,))
+    video_capturer_proc = Process(target=get_rtsp, args=(video_queue, signal_queue,))
     video_out_thread = Thread(target=video_out, args=(video_queue, signal_queue, ))
     video_capturer_proc.start()
     video_out_thread.start()

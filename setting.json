@@ -3,5 +3,7 @@
         "height": 480,
         "width": 640
     },
-	"debug": true
+	"debug": true,
+    "mode": 1,
+    "_//mode type": "1: face recognition, 2: set user"
 }
