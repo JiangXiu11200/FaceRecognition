@@ -38,15 +38,19 @@ class calculation:
             )
 
     def grayscale_area(eye_left_roi, eye_right_roi, threshold_value):
-        if eye_left_roi.size == 0:
-            eye_left_roi = eye_right_roi
-        elif eye_right_roi.size == 0:
-            eye_right_roi = eye_left_roi
-        left_eye_gary = cv2.cvtColor(eye_left_roi, cv2.COLOR_BGR2GRAY)
-        right_eye_gary = cv2.cvtColor(eye_right_roi, cv2.COLOR_BGR2GRAY)
-        ret, left_eye_gary = cv2.threshold(left_eye_gary, threshold_value, 255, cv2.THRESH_BINARY)
-        ret, right_eye_gary = cv2.threshold(right_eye_gary, threshold_value, 255, cv2.THRESH_BINARY)
-        if config.debug:
-            cv2.imshow("eyes_left", left_eye_gary)
-            cv2.imshow("eyes_right", right_eye_gary)
-        return left_eye_gary, right_eye_gary
+        try:
+            if eye_left_roi.size == 0:
+                eye_left_roi = eye_right_roi
+            elif eye_right_roi.size == 0:
+                eye_right_roi = eye_left_roi
+            left_eye_gary = cv2.cvtColor(eye_left_roi, cv2.COLOR_BGR2GRAY)
+            right_eye_gary = cv2.cvtColor(eye_right_roi, cv2.COLOR_BGR2GRAY)
+            ret, left_eye_gary = cv2.threshold(left_eye_gary, threshold_value, 255, cv2.THRESH_BINARY)
+            ret, right_eye_gary = cv2.threshold(right_eye_gary, threshold_value, 255, cv2.THRESH_BINARY)
+            if config.debug:
+                cv2.imshow("eyes_left", left_eye_gary)
+                cv2.imshow("eyes_right", right_eye_gary)
+            return left_eye_gary, right_eye_gary
+        except Exception as e:
+            config.logger.debug(f"Calculate eyes grayscale area error: {e}")
+            return None, None

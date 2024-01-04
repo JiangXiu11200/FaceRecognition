@@ -61,7 +61,7 @@ class FaceApp():
                             # face bounding box
                             face_box_x1, face_box_y1, face_box_x2, face_box_y2 = calculation.get_face_boundingbox(frame, bounding_box, self.width, self.height)
                             face_roi = frame[face_box_y1 : face_box_y2, face_box_x1 : face_box_x2]
-                            if average_brightness == 0:
+                            if average_brightness == 0 and np.all(np.array(face_roi.shape) != 0):
                                 hsv_image = cv2.cvtColor(face_roi, cv2.COLOR_BGR2HSV)
                                 _, _, value = cv2.split(hsv_image)
                                 average_brightness = np.mean(value)
@@ -70,7 +70,7 @@ class FaceApp():
                                 else:
                                     grayscale_value = 30
 
-                        if self.mode == 1:
+                        if self.mode == 1 and face_roi is not None:
                             # eyes bounding box
                             eyes_left_x1, eyes_left_y1, eyes_left_x2, eyes_left_y2, \
                             eyes_right_x1, eyes_right_y1, eyes_right_x2, eyes_right_y2 = calculation.get_eyes_boundingbox(frame, detection, bounding_box.height, self.width, self.height)
@@ -78,8 +78,9 @@ class FaceApp():
                             eye_right_roi = frame[eyes_right_y1 : eyes_right_y2, eyes_right_x1 : eyes_right_x2]
                             # blink detection
                             left_eye_gary, right_eye_gary =  calculation.grayscale_area(eye_left_roi, eye_right_roi, grayscale_value)
-                            eyes_blink[0].append((left_eye_gary == 0).sum())
-                            eyes_blink[1].append((right_eye_gary == 0).sum())
+                            if left_eye_gary is not None or right_eye_gary is not None:
+                                eyes_blink[0].append((left_eye_gary == 0).sum())
+                                eyes_blink[1].append((right_eye_gary == 0).sum())
                             if len(eyes_blink[0]) > 15 and len(eyes_blink[1]) > 15:
                                 eyes_blink[0].pop(0)
                                 eyes_blink[1].pop(0)
@@ -104,9 +105,9 @@ class FaceApp():
                                 if key == ord("r"):
                                     extraction = Thread(target=reco.feature_extraction, args=(face_roi, self.predictor, self.face_reco,))
                                     extraction.start()
-                        elif self.mode == 2:
+                        elif self.mode == 2 and face_roi is not None:
                             key = cv2.waitKey(1)
-                            if face_roi is not None and key == ord("s"):
+                            if key == ord("s"):
                                 extraction = Thread(target=reco.feature_extraction, args=(face_roi, self.predictor, self.face_reco,))
                                 extraction.start()
                     else:
