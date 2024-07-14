@@ -1,9 +1,20 @@
 {
-    "sys_config": {
-        "height": 480,
-        "width": 640
+    "video_config": {
+        "image_height": 480,
+        "image_width": 640,
+        "detection_range_start_point": [170, 120],
+        "detection_range_end_point": [470, 360]
     },
-	"debug": true,
-    "mode": 1,
-    "_//mode type": "1: face recognition, 2: set user"
+    "sys_config": {
+        "debug": true,
+        "mode": "recognition"
+    },
+    "reco_config": {
+        "minimum_bounding_box_height": 0.40,
+        "minimum_face_detection_score": 0.80
+    },
+    "dlib_predictor": "models/dlib/shape_predictor_68_face_landmarks.dat",
+    "dlib_recognition_model": "models/dlib/dlib_face_recognition_resnet_model_v1.dat",
+    "face_model": "models/face_recognition/model.csv",
+    "logs_path": "logs"
 }
