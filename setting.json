@@ -7,7 +7,8 @@
     },
     "sys_config": {
         "debug": true,
-        "mode": "recognition"
+        "mode": "recognition",
+        "//_select": "setting recognition"
     },
     "reco_config": {
         "minimum_bounding_box_height": 0.40,

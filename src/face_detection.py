@@ -26,7 +26,7 @@ class FaceApp(package.calculation):
         self.video_queue = Queue()
         self.signal_queue = Queue()
         self.mp_face_detection = mp.solutions.face_detection
-        video_capturer_proc = Process(target=video_capturer.get_rtsp, args=(self.video_queue, self.signal_queue))
+        video_capturer_proc = Process(target=video_capturer.get_video, args=(self.video_queue, self.signal_queue))
         video_capturer_proc.start()
         config.logger.info("start system")
 
@@ -115,7 +115,7 @@ class FaceApp(package.calculation):
                                 if key == ord("r"):
                                     extraction = Thread(target=self.feature_extraction, args=(face_roi, self.predictor, self.face_reco,))
                                     extraction.start()
-                        if self.SETTING_MODE == 2 and face_roi is not None:
+                        if self.SETTING_MODE and face_roi is not None:
                             key = cv2.waitKey(1)
                             if key == ord("s"):
                                 extraction = Thread(target=self.feature_extraction, args=(face_roi, self.predictor, self.face_reco,))

@@ -116,7 +116,7 @@ class calculation:
                 execution_time = round(end_time - start_time, 3)
                 config.logger.info(f"Face Recognition Time: {execution_time} sec")
                 return face_descriptor
-            elif config.SETTING_MODE == 2:
+            elif config.SETTING_MODE:
                 self.save_feature(face_descriptor)
                 return True
         except Exception as e:
