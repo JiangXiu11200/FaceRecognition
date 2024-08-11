@@ -1,0 +1,9 @@
+opencv-python
+face_recognition
+cmake
+dlib
+mediapipe
+django==4.2.14
+channels==3.0.4
+channels_redis==4.2.0
+watchdog==4.0.1
