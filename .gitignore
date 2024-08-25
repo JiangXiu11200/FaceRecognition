@@ -1,3 +1,8 @@
+# python cache
+__pycache__
 *.pyc
+
+# system neglect
+/models
 *.jpg
 *.log
