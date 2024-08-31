@@ -25,7 +25,7 @@ class SystemConfig:
 
 class RecoConfig:
     def __init__(self, enable: bool, set_mode: bool, dlib_predictor: str, dlib_recognition_model: str, face_model: str, minimum_bounding_box_height: int, \
-                minimum_face_detection_score: float, eyes_detection_brightness_threshold: int, eyes_detection_brightness_value: list):
+                minimum_face_detection_score: float, eyes_detection_brightness_threshold: int, eyes_detection_brightness_value: list, sensitivity: float):
         __slots__ = [
             "enable",
             "set_mode",
@@ -36,7 +36,8 @@ class RecoConfig:
             "minimum_face_detection_score",
             "face_features",
             "eyes_detection_brightness_threshold",
-            "eyes_detection_brightness_value"
+            "eyes_detection_brightness_value",
+            "sensitivity"
         ]
         self.enable = enable
         self.set_mode = set_mode
@@ -47,6 +48,7 @@ class RecoConfig:
         self.minimum_face_detection_score = minimum_face_detection_score
         self.eyes_detection_brightness_threshold = eyes_detection_brightness_threshold
         self.eyes_detection_brightness_value = eyes_detection_brightness_value
+        self.sensitivity = sensitivity
         self.registered_face_descriptor: np.ndarray = None
         self.load_face_features()
 

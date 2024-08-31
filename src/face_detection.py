@@ -165,7 +165,7 @@ class FaceApp(package.calculation):
                                 key = cv2.waitKey(1)
                                 if key == ord("r"):
                                     extraction = Thread(target=self.face_prediction, args=(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, \
-                                                        self.reco_config.registered_face_descriptor))
+                                                        self.reco_config.registered_face_descriptor, self.reco_config.sensitivity))
                                     extraction.start()
                                 if self.sys_config.debug:
                                     color = (0, 255, 0) if blink_state else (0, 0, 255)

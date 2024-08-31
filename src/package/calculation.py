@@ -117,6 +117,16 @@ class calculation:
         return state
 
     def save_feature(self, out_put_path: str, face_descriptor: np.ndarray):
+        '''
+        Save face descriptor.
+        
+        Args:
+            out_put_path (str): The output path.
+            face_descriptor (np.ndarray): The face descriptor.
+
+        Returns:
+            result (bool): Save status.
+        '''
         try:
             with open(out_put_path, mode='a+', newline='') as file:
                 writer = csv.writer(file)
@@ -127,7 +137,7 @@ class calculation:
             return False
 
     def face_prediction(self, face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1, \
-                        registered_face_descriptor: np.ndarray):
+                        registered_face_descriptor: np.ndarray, sensitivity: float):
         '''
         Predict faces.
         
@@ -145,7 +155,7 @@ class calculation:
             result = False
             current_face_descriptor, _ = self.feature_extraction(face_roi, dlib_predictor, dlib_face_reco_model)
             distance = self.euclidean_distance(registered_face_descriptor, current_face_descriptor)
-            if distance <= 0.4:
+            if distance <= sensitivity:
                 config.logger.info("pass.")
                 result = True
             else:
@@ -185,6 +195,16 @@ class calculation:
             return False
 
     def euclidean_distance(self, registered_face_descriptor: np.ndarray, current_face_descriptor: np.ndarray):
+        '''
+        Calculate the Euclidean distance between the current face descriptor and the loaded model.
+        
+        Args:
+            registered_face_descriptor (np.ndarray): Registered face descriptors imported by the model.
+            current_face_descriptor (np.ndarray): The current face descriptor.
+
+        Returns:
+            result (float): The Euclidean distance.
+        '''
         dist_list = []
         for original_features in registered_face_descriptor:
             dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
