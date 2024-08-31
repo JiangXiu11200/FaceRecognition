@@ -7,26 +7,22 @@ from threading import Thread
 import cv2
 import mediapipe as mp
 import numpy as np
-
-from src import config, package, video_capturer
+from package.settings import Settings
+from package.video_capturer import VideoCapturer
+from package import config
+import package
 
 
 class FaceApp(package.calculation):
     def __init__(self):
-        self.height = config.image_height
-        self.width = config.image_width
-        self.detct_start = config.detection_range_start_point
-        self.detct_end = config.detection_range_end_point
-        self.predictor = config.dlib_predictor
-        self.face_reco = config.dlib_recognition_model
-        self.FACE_RECOGNITION_MODE = config.FACE_RECOGNITION_MODE
-        self.SETTING_MODE = config.SETTING_MODE
-        self.minimum_bounding_box_height = config.minimum_bounding_box_height
-        self.minimum_face_detection_score = config.minimum_face_detection_score
+        self.settings = Settings()
+        self.settings.load_setting()
+        rtsp = self.settings.video_config.rtsp
         self.video_queue = Queue()
         self.signal_queue = Queue()
         self.mp_face_detection = mp.solutions.face_detection
-        video_capturer_proc = Process(target=video_capturer.get_video, args=(self.video_queue, self.signal_queue))
+        video_capture = VideoCapturer(rtsp, self.video_queue, self.signal_queue)
+        video_capturer_proc = Process(target=video_capture.get_video)
         video_capturer_proc.start()
         config.logger.info("start system")
 
@@ -53,8 +49,9 @@ class FaceApp(package.calculation):
                         fps_start_time = time.time()
                     if self.video_queue.empty():
                         cv2.waitKey(1)
-                    frame = cv2.resize(self.video_queue.get(), (self.width, self.height), interpolation=cv2.INTER_AREA)
-                    cv2.rectangle(frame, (self.detct_start[0], self.detct_start[1]), (self.detct_end[0], self.detct_end[1]), (0, 255, 0), 2)
+                    frame = cv2.resize(self.video_queue.get(), (self.settings.video_config.image_width, self.settings.video_config.image_height), interpolation=cv2.INTER_AREA)
+                    cv2.rectangle(frame, (self.settings.video_config.detection_range_start_point[0], self.settings.video_config.detection_range_start_point[1]), \
+                                (self.settings.video_config.detection_range_end_point[0], self.settings.video_config.detection_range_end_point[1]), (0, 255, 0), 2)
                     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     results = face_detection.process(frame_bgr)
                     if results.detections:
@@ -63,8 +60,12 @@ class FaceApp(package.calculation):
                             bounding_box = detection.location_data.relative_bounding_box
                             bounding_box_height = round(bounding_box.height, 2)
                             detection_score = round(detection.score[0], 2)
-                            face_box_x1, face_box_y1, face_box_x2, face_box_y2, face_box_center_x, face_box_center_y = self.get_face_boundingbox(frame, bounding_box, self.width, self.height)
-                            if not self.detection_range(face_box_center_x, face_box_center_y , bounding_box_height, detection_score, self.minimum_bounding_box_height, self.minimum_face_detection_score):
+                            face_box_x1, face_box_y1, face_box_x2, face_box_y2, face_box_center_x, face_box_center_y = self.get_face_boundingbox(bounding_box, self.settings.video_config.image_width, self.settings.video_config.image_height)
+                            if self.settings.system_config.debug:
+                                cv2.rectangle(frame, (face_box_x1, face_box_y1), (face_box_x2, face_box_y2), (0, 255, 0), 2)
+                                cv2.circle(frame, (face_box_center_x, face_box_center_y), 3, (0, 0, 225), -1)
+                            if not self.detection_range(self.settings.video_config.detection_range_start_point, self.settings.video_config.detection_range_end_point, face_box_center_x, face_box_center_y , \
+                                                        bounding_box_height, detection_score, self.settings.reco_config.minimum_bounding_box_height, self.settings.reco_config.minimum_face_detection_score):
                                 average_brightness = 0
                                 blink_count = 0
                                 eyes_blink = [[], []]
@@ -81,14 +82,20 @@ class FaceApp(package.calculation):
                                     grayscale_value = 80
                                 else:
                                     grayscale_value = 40
-                        if self.FACE_RECOGNITION_MODE and average_brightness != 0 and face_in_roi:
+                        if self.settings.reco_config.enable and average_brightness != 0 and face_in_roi:
                             # eyes bounding box
                             eyes_left_x1, eyes_left_y1, eyes_left_x2, eyes_left_y2, \
-                            eyes_right_x1, eyes_right_y1, eyes_right_x2, eyes_right_y2 = self.get_eyes_boundingbox(frame, detection, bounding_box.height, self.width, self.height)
+                            eyes_right_x1, eyes_right_y1, eyes_right_x2, eyes_right_y2 = self.get_eyes_boundingbox(detection, bounding_box.height, self.settings.video_config.image_width, self.settings.video_config.image_height)
+                            if self.settings.system_config.debug:
+                                cv2.rectangle(frame, (eyes_left_x1, eyes_left_y1), (eyes_left_x2, eyes_left_y2), (0, 255, 0), 2)
+                                cv2.rectangle(frame, (eyes_right_x1, eyes_right_y1), (eyes_right_x2, eyes_right_y2), (0, 255, 0), 2)
                             eye_left_roi = frame[eyes_left_y1 : eyes_left_y2, eyes_left_x1 : eyes_left_x2]
                             eye_right_roi = frame[eyes_right_y1 : eyes_right_y2, eyes_right_x1 : eyes_right_x2]
                             # blink detection
                             left_eye_gary, right_eye_gary =  self.grayscale_area(eye_left_roi, eye_right_roi, grayscale_value)
+                            if self.settings.system_config.debug:
+                                cv2.imshow("eyes_left", left_eye_gary)
+                                cv2.imshow("eyes_right", right_eye_gary)
                             if left_eye_gary is not None or right_eye_gary is not None:
                                 eyes_blink[0].append((left_eye_gary == 0).sum())
                                 eyes_blink[1].append((right_eye_gary == 0).sum())
@@ -113,13 +120,13 @@ class FaceApp(package.calculation):
                                     cv2.putText(frame, str(blink_state), (eyes_left_x1, eyes_left_x1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
                                 key = cv2.waitKey(1)
                                 if key == ord("r"):
-                                    extraction = Thread(target=self.feature_extraction, args=(face_roi, self.predictor, self.face_reco,))
+                                    extraction = Thread(target=self.feature_extraction, args=(face_roi, self.settings.reco_config.dlib_predictor, self.settings.reco_config.dlib_recognition_model, self.settings.reco_config.face_features,))
                                     extraction.start()
-                        if self.SETTING_MODE and face_roi is not None:
+                        if self.settings.reco_config.set_mode and face_roi is not None:
                             key = cv2.waitKey(1)
                             if key == ord("s"):
-                                extraction = Thread(target=self.feature_extraction, args=(face_roi, self.predictor, self.face_reco,))
-                                extraction.start()
+                                face_descriptor = self.feature_extraction(face_roi, self.settings.reco_config.dlib_predictor, self.settings.reco_config.dlib_recognition_model, self.settings.reco_config.face_features)
+                                self.save_feature(self.settings.reco_config.face_model, face_descriptor)
                     else:
                         blink_count = 0
                         eyes_blink = [[], []]
@@ -128,7 +135,7 @@ class FaceApp(package.calculation):
                     cv2.putText(frame, str(fps), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
                     cv2.imshow("video_out", frame)
                     key = cv2.waitKey(1)
-                    if key == 27: # esc
+                    if key == ord("q"):
                         self.signal_queue.put(1)
                         break
                     if key == ord(" "):
@@ -139,3 +146,7 @@ class FaceApp(package.calculation):
                     time.sleep(1)
                     os.kill(os.getpid(), 9)
         cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    app = FaceApp()
+    app.run()
