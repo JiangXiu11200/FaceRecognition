@@ -97,6 +97,8 @@ class FaceApp(package.calculation):
         face_roi = None
         eyes_blink = [[], []]
         face_in_detection_range = False
+        enable_execution_interval = False
+        interval_count = 0
         # blink detection parameters
         left_median = 1
         right_median = 1
@@ -163,10 +165,17 @@ class FaceApp(package.calculation):
                             if len(eyes_blink[0]) > 15 and len(eyes_blink[1]) > 15:
                                 blink_state, left_median, right_median = self.blink_detect(eyes_blink, blink_count, left_median, right_median)
                                 key = cv2.waitKey(1)
-                                if key == ord("r"):
+                                if (self.sys_config.debug and key == ord("r")) or (not self.sys_config.debug and blink_state and not enable_execution_interval):  # If debug mode is enabled, prediction can only be performed by pressing "r"
                                     extraction = Thread(target=self.face_prediction, args=(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, \
                                                         self.reco_config.registered_face_descriptor, self.reco_config.sensitivity))
                                     extraction.start()
+                                    enable_execution_interval = True
+                                    interval_count = 0
+                                if enable_execution_interval:
+                                    interval_count +=1
+                                    if interval_count >= self.reco_config.consecutive_prediction_intervals:
+                                        enable_execution_interval = False
+                                        interval_count = 0
                                 if self.sys_config.debug:
                                     color = (0, 255, 0) if blink_state else (0, 0, 255)
                                     cv2.putText(frame, str(blink_state), (bounding_eye_left[0][0], bounding_eye_left[0][0] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)

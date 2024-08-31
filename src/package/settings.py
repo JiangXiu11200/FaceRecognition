@@ -25,7 +25,7 @@ class SystemConfig:
 
 class RecoConfig:
     def __init__(self, enable: bool, set_mode: bool, dlib_predictor: str, dlib_recognition_model: str, face_model: str, minimum_bounding_box_height: int, \
-                minimum_face_detection_score: float, eyes_detection_brightness_threshold: int, eyes_detection_brightness_value: list, sensitivity: float):
+                minimum_face_detection_score: float, eyes_detection_brightness_threshold: int, eyes_detection_brightness_value: list, sensitivity: float, consecutive_prediction_intervals: int):
         __slots__ = [
             "enable",
             "set_mode",
@@ -37,7 +37,8 @@ class RecoConfig:
             "face_features",
             "eyes_detection_brightness_threshold",
             "eyes_detection_brightness_value",
-            "sensitivity"
+            "sensitivity",
+            "consecutive_prediction_intervals"
         ]
         self.enable = enable
         self.set_mode = set_mode
@@ -49,6 +50,7 @@ class RecoConfig:
         self.eyes_detection_brightness_threshold = eyes_detection_brightness_threshold
         self.eyes_detection_brightness_value = eyes_detection_brightness_value
         self.sensitivity = sensitivity
+        self.consecutive_prediction_intervals = consecutive_prediction_intervals
         self.registered_face_descriptor: np.ndarray = None
         self.load_face_features()
 
@@ -70,6 +72,8 @@ class Settings:
         with open(config.SETTING_DIRECTORY) as f:
             data = json.load(f)
             self.updata_setting(data["video_config"], data["sys_config"], data["reco_config"])
+        if self.system_config.debug == True:
+            self.reco_config.consecutive_prediction_intervals = 9999
 
     def updata_setting(self, video_config, system_config, reco_config):
         self.video_config = VideoConfig(**video_config)
