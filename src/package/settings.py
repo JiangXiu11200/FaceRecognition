@@ -47,7 +47,7 @@ class RecoConfig:
         self.minimum_face_detection_score = minimum_face_detection_score
         self.eyes_detection_brightness_threshold = eyes_detection_brightness_threshold
         self.eyes_detection_brightness_value = eyes_detection_brightness_value
-        self.face_features: np.ndarray = None
+        self.registered_face_descriptor: np.ndarray = None
         self.load_face_features()
 
     def load_face_features(self):
@@ -56,7 +56,7 @@ class RecoConfig:
             rows = csv.reader(model)
             for row in rows:
                 face_features.append(np.array(row, dtype=float))
-        self.face_features = np.array(face_features)
+        self.registered_face_descriptor = np.array(face_features)
 
 class Settings:
     def __init__(self):

@@ -5,6 +5,7 @@ from multiprocessing import Process, Queue
 from threading import Thread
 
 import cv2
+import dlib
 import mediapipe as mp
 import numpy as np
 
@@ -70,6 +71,22 @@ class FaceApp(package.calculation):
         except Exception as err:
             print(f"blink_detect error: {err}")
             return None
+
+    def draw_dlib_features(self, face_roi: np.ndarray, feature_coordinates: dlib.rectangle):
+        '''
+        Draw dlib features.
+
+        Args:
+            face_roi (np.ndarray): The face ROI.
+            feature_coordinates (dlib.rectangle): The dlib feature coordinates.
+
+        Returns:
+            None
+        '''
+        for i in range(68):
+            cv2.circle(face_roi,(feature_coordinates.part(i).x, feature_coordinates.part(i).y), 3, (0, 0, 255), 2)
+            cv2.putText(face_roi, str(i), (feature_coordinates.part(i).x, feature_coordinates.part(i).y), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 0, 0), 1)
+        cv2.imshow("face_roi", face_roi)
 
     def run(self):
         # fps parameters
@@ -145,21 +162,23 @@ class FaceApp(package.calculation):
                                 eyes_blink[1].append((right_eye_gary == 0).sum())
                             if len(eyes_blink[0]) > 15 and len(eyes_blink[1]) > 15:
                                 blink_state, left_median, right_median = self.blink_detect(eyes_blink, blink_count, left_median, right_median)
+                                key = cv2.waitKey(1)
+                                if key == ord("r"):
+                                    extraction = Thread(target=self.face_prediction, args=(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, \
+                                                        self.reco_config.registered_face_descriptor))
+                                    extraction.start()
                                 if self.sys_config.debug:
                                     color = (0, 255, 0) if blink_state else (0, 0, 255)
                                     cv2.putText(frame, str(blink_state), (bounding_eye_left[0][0], bounding_eye_left[0][0] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
                                     cv2.imshow("eyes_left", left_eye_gary)
                                     cv2.imshow("eyes_right", right_eye_gary)
-                                key = cv2.waitKey(1)
-                                if key == ord("r"):
-                                    extraction = Thread(target=self.feature_extraction, args=(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, \
-                                                        self.reco_config.face_features,))
-                                    extraction.start()
                         if self.reco_config.set_mode and face_roi is not None:
                             key = cv2.waitKey(1)
                             if key == ord("s"):
-                                face_descriptor = self.feature_extraction(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, self.reco_config.face_features)
+                                face_descriptor, feature_coordinates = self.feature_extraction(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model)
                                 self.save_feature(self.reco_config.face_model, face_descriptor)
+                                if self.sys_config.debug:
+                                    self.draw_dlib_features(face_roi, feature_coordinates)
                     else:
                         eyes_blink = [[], []]
                         blink_count = 0

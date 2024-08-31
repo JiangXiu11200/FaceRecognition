@@ -91,7 +91,8 @@ class calculation:
             config.logger.debug(f"Calculate eyes grayscale area error: {e}")
             return None, None
 
-    def detection_range(self, detct_start: list, detct_end: list, face_box_center_x, face_box_center_y, bounding_box_height, detection_score, minimum_bounding_box_height, minimum_face_detection_score):
+    def detection_range(self, detct_start: list, detct_end: list, face_box_center_x, face_box_center_y, bounding_box_height, detection_score, \
+                        minimum_bounding_box_height, minimum_face_detection_score):
         return detct_start[0] < face_box_center_x < detct_end[0] and detct_start[1] < face_box_center_y < detct_end[1] and \
                 bounding_box_height > minimum_bounding_box_height and detection_score > minimum_face_detection_score
 
@@ -122,39 +123,71 @@ class calculation:
                 writer.writerow(face_descriptor)
             return True
         except Exception as err:
-            print("Sve feature save_feature mode error: ", err)
+            print("Save feature save_feature mode error: ", err)
             return False
 
-    def feature_extraction(self, face_roi, predictor, face_reco, face_features): # -> np.ndarray:
-        start_time = time.time()
+    def face_prediction(self, face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1, \
+                        registered_face_descriptor: np.ndarray):
+        '''
+        Predict faces.
+        
+        Args:
+            face_roi (np.ndarray): The face ROI.
+            dlib_predictor (dlib.shape_predictor): The dlib predictor.
+            dlib_face_reco (dlib.face_recognition_model_v1): The dlib face recognition model.
+            registered_face_descriptor (np.ndarray): The registered face descriptor. (face model data)
+
+        Returns:
+            result (bool): Prediction results.
+        '''
         try:
-            landmarks_frame = cv2.cvtColor(face_roi, cv2. COLOR_BGR2RGB)
-            dlib_coordinate = dlib.rectangle(0, 0, face_roi.shape[0], face_roi.shape[1])
-            shape = predictor(landmarks_frame, dlib_coordinate)
-            face_descriptor = np.array(face_reco.compute_face_descriptor(face_roi, shape))
-            # if debug:
-            #     # 繪製dlib特徵點
-            #     for i in range(68):
-            #         cv2.circle(face_roi,(shape.part(i).x, shape.part(i).y), 3, (0, 0, 255), 2)
-            #         cv2.putText(face_roi, str(i), (shape.part(i).x, shape.part(i).y), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 0, 0), 1)
-            #     cv2.imshow("face_roi", face_roi)
-            distance = self.euclidean_distance(face_features, face_descriptor)
+            start_time = time.time()
+            result = False
+            current_face_descriptor, _ = self.feature_extraction(face_roi, dlib_predictor, dlib_face_reco_model)
+            distance = self.euclidean_distance(registered_face_descriptor, current_face_descriptor)
             if distance <= 0.4:
                 config.logger.info("pass.")
+                result = True
             else:
                 config.logger.info("fail.")
+                result = False
             end_time = time.time()
             execution_time = round(end_time - start_time, 3)
             config.logger.info(f"Face Recognition Time: {execution_time} sec")
-            return face_descriptor
-        except Exception as e:
+            return result
+        except Exception as err:
+            print("face_prediction error: ", err)
             config.logger.debug(traceback.print_exc())
             return False
 
-    def euclidean_distance(self, face_features: np.ndarray, face_descriptor: np.ndarray):
+    def feature_extraction(self, face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1):
+        '''
+        Get face descriptor by dlib.
+
+        Args:
+            face_roi (np.ndarray): The face ROI.
+            predictor (dlib.shape_predictor): The dlib predictor.
+            dlib_face_reco (dlib.face_recognition_model_v1): The dlib face recognition model.
+            face_features (np.ndarray): The face features.
+
+        Returns:
+            face_descriptor (np.ndarray): The face descriptor.
+        '''
+        try:
+            landmarks_frame = cv2.cvtColor(face_roi, cv2. COLOR_BGR2RGB)
+            dlib_coordinate = dlib.rectangle(0, 0, face_roi.shape[0], face_roi.shape[1])
+            feature_coordinates = dlib_predictor(landmarks_frame, dlib_coordinate)
+            current_face_descriptor = np.array(dlib_face_reco_model.compute_face_descriptor(face_roi, feature_coordinates))
+            return current_face_descriptor, feature_coordinates
+        except Exception as err:
+            print("feature_extraction error: ", err)
+            config.logger.debug(traceback.print_exc())
+            return False
+
+    def euclidean_distance(self, registered_face_descriptor: np.ndarray, current_face_descriptor: np.ndarray):
         dist_list = []
-        for original_features in face_features:
-            dist = np.sqrt(np.sum(np.square(face_descriptor - original_features)))
+        for original_features in registered_face_descriptor:
+            dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
             dist_list.append(dist)
         result = min(dist_list)
         config.logger.debug(f"Minimum euclidean distance: {result}")
