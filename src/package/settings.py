@@ -24,8 +24,20 @@ class SystemConfig:
         self.logs_path = logs_path
 
 class RecoConfig:
-    def __init__(self, enable: bool, set_mode: bool, dlib_predictor: str, dlib_recognition_model: str, face_model: str, minimum_bounding_box_height: int, minimum_face_detection_score: float):
-        __slots__ = ["enable", "set_mode", "dlib_predictor", "dlib_recognition_model", "face_model", "minimum_bounding_box_height", "minimum_face_detection_score", "face_features"]
+    def __init__(self, enable: bool, set_mode: bool, dlib_predictor: str, dlib_recognition_model: str, face_model: str, minimum_bounding_box_height: int, \
+                minimum_face_detection_score: float, eyes_detection_brightness_threshold: int, eyes_detection_brightness_value: list):
+        __slots__ = [
+            "enable",
+            "set_mode",
+            "dlib_predictor",
+            "dlib_recognition_model",
+            "face_model",
+            "minimum_bounding_box_height",
+            "minimum_face_detection_score",
+            "face_features",
+            "eyes_detection_brightness_threshold",
+            "eyes_detection_brightness_value"
+        ]
         self.enable = enable
         self.set_mode = set_mode
         self.dlib_predictor = dlib.shape_predictor(dlib_predictor)
@@ -33,6 +45,8 @@ class RecoConfig:
         self.face_model = face_model
         self.minimum_bounding_box_height = minimum_bounding_box_height
         self.minimum_face_detection_score = minimum_face_detection_score
+        self.eyes_detection_brightness_threshold = eyes_detection_brightness_threshold
+        self.eyes_detection_brightness_value = eyes_detection_brightness_value
         self.face_features: np.ndarray = None
         self.load_face_features()
 

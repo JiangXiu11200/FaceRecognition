@@ -4,22 +4,48 @@ import traceback
 
 import cv2
 import dlib
+import mediapipe
 import numpy as np
 
 import package.config as config
 
 
 class calculation:
-    def get_face_boundingbox(self, bounding_box, width, height):       
-        # face bounding box
+    def get_face_boundingbox(self, bounding_box: mediapipe, width: int, height: int):
+        '''
+        Get the face bounding box coordinates converted by mediapipe data format to the actual image size.
+
+        Args:
+            bounding_box (mediapipe.bounding_box): The bounding box coordinates of the face.
+            width (int): The width of the image.
+            height (int): The height of the image.
+
+        Returns:
+            bounding_box (list): The bounding box coordinates of the face.
+            center (list): The center coordinates of the face.
+        '''
         bounding_x1, bounding_y1 = int(bounding_box.xmin * width), int(bounding_box.ymin * height)
         bounding_x2, bounding_y2 = int(bounding_x1 + bounding_box.width * width), int(bounding_y1 + bounding_box.height * height)
         center_x = (bounding_x1 + bounding_x2) // 2
         center_y = (bounding_y1 + bounding_y2) // 2        
-        return bounding_x1, bounding_y1, bounding_x2, bounding_y2, center_x, center_y
+        bounding_box = [[bounding_x1, bounding_y1], [bounding_x2, bounding_y2]]
+        center = [center_x, center_y]
+        return bounding_box, center
 
-    def get_eyes_boundingbox(self, detection, bounding_height, width, height):
-        # eyes bounding box
+    def get_eyes_boundingbox(self, detection: mediapipe, bounding_height: mediapipe, width: int, height: int):
+        '''
+        Get the eyes bounding box coordinates converted by mediapipe data format to the actual image size.
+        
+        Args:
+            detection (mediapipe.detection): The detection data of the face.
+            bounding_height (mediapipe.bounding_box): The bounding box height of the face.
+            width (int): The width of the image.
+            height (int): The height of the image.
+
+        Returns:
+            bounding_eye_left (list): The left eye bounding box coordinates.
+            bounding_eye_right (list): The right eye bounding box coordinates.
+        '''
         eye_left = detection.location_data.relative_keypoints[0]
         eye_right = detection.location_data.relative_keypoints[1]
         eye_left_x, eye_left_y = int(eye_left.x * width), int(eye_left.y * height)
@@ -31,18 +57,24 @@ class calculation:
         bounding_eye_right_x1, bounding_eye_right_y1, \
         bounding_eye_right_x2, bounding_eye_right_y2 = int(eye_right_x - eye_proportion), int(eye_right_y - eye_proportion), \
                                                     int(eye_right_x + eye_proportion), int(eye_right_y + eye_proportion)
-        return (
-            bounding_eye_left_x1,
-            bounding_eye_left_y1,
-            bounding_eye_left_x2,
-            bounding_eye_left_y2,
-            bounding_eye_right_x1,
-            bounding_eye_right_y1,
-            bounding_eye_right_x2,
-            bounding_eye_right_y2
-            )
+        
+        bounding_eye_left = [[bounding_eye_left_x1, bounding_eye_left_y1], [bounding_eye_left_x2, bounding_eye_left_y2]]
+        bounding_eye_right = [[bounding_eye_right_x1, bounding_eye_right_y1], [bounding_eye_right_x2, bounding_eye_right_y2]]
+        return bounding_eye_left, bounding_eye_right
 
-    def grayscale_area(self, eye_left_roi, eye_right_roi, threshold_value):
+    def grayscale_area(self, eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
+        '''
+        Grayscale the eyes ROI and image pre-processing blur.
+
+        Args:
+            eye_left_roi (np.ndarray): The left eye ROI.
+            eye_right_roi (np.ndarray): The right eye ROI.
+            threshold_value (int): The threshold value for grayscale.
+
+        Returns:
+            left_eye_gary (np.ndarray): The grayscaled left eye ROI.
+            right_eye_gary (np.ndarray): The grayscaled right eye ROI.
+        '''
         try:
             if eye_left_roi.size == 0:
                 eye_left_roi = eye_right_roi
@@ -63,7 +95,16 @@ class calculation:
         return detct_start[0] < face_box_center_x < detct_end[0] and detct_start[1] < face_box_center_y < detct_end[1] and \
                 bounding_box_height > minimum_bounding_box_height and detection_score > minimum_face_detection_score
 
-    def easy_blink_detect(self, blink_list):
+    def easy_blink_detect(self, blink_list: np.ndarray):
+        '''
+        Check whether to blink.
+
+        Args:
+            blink_list (np.ndarray): The blink list.
+
+        Returns:
+            state (bool): The blink state.
+        '''
         state = False
         if 0 in blink_list and np.count_nonzero(blink_list == 0) >= 3 and np.count_nonzero(blink_list == 1) >= 3 and blink_list[0] != 0 and blink_list[-1] != 0:
             first_zero_index = np.argmax(blink_list == 0)
@@ -74,7 +115,7 @@ class calculation:
             state = False
         return state
 
-    def save_feature(self, out_put_path: str, face_descriptor: np.ndarray) -> bool:
+    def save_feature(self, out_put_path: str, face_descriptor: np.ndarray):
         try:
             with open(out_put_path, mode='a+', newline='') as file:
                 writer = csv.writer(file)
@@ -84,7 +125,7 @@ class calculation:
             print("Sve feature save_feature mode error: ", err)
             return False
 
-    def feature_extraction(self, face_roi, predictor, face_reco, face_features) -> np.ndarray:
+    def feature_extraction(self, face_roi, predictor, face_reco, face_features): # -> np.ndarray:
         start_time = time.time()
         try:
             landmarks_frame = cv2.cvtColor(face_roi, cv2. COLOR_BGR2RGB)
