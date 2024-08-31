@@ -35,43 +35,6 @@ class FaceApp(package.calculation):
     def draw_rectangle(self, frame: np.ndarray, coordinate: list):
         cv2.rectangle(frame, (coordinate[0][0], coordinate[0][1]), (coordinate[1][0], coordinate[1][1]), (0, 255, 0), 2)
 
-    def blink_detect(self, eyes_blink: list, blink_count: int, left_median: int, right_median: int):
-        '''
-        Detect blinking of both eyes.
-
-        Args:
-            eyes_blink (list): The eyes blink list.
-            blink_count (int): The data length of the eyes_blink.
-            left_median (int): The left eye median.
-            right_median (int): The right eye median.
-
-        Returns:
-            blink_state (bool): The blink state.
-            left_median (int): The left eye median.
-            right_median (int): The right eye median.
-        '''
-        try:
-            eyes_blink[0].pop(0)
-            eyes_blink[1].pop(0)
-            left_blink = np.array(eyes_blink[0])
-            right_blink = np.array(eyes_blink[1])
-            if blink_count % 15 == 0:
-                left_median = int(np.median(eyes_blink[0]) * 0.8)
-                right_median = int(np.median(eyes_blink[1]) * 0.8)
-                blink_state = False
-            left_blink = (left_blink > left_median).astype(int)
-            right_blink = (right_blink > right_median).astype(int)
-            left_blink_state = self.easy_blink_detect(left_blink)
-            right_blink_state = self.easy_blink_detect(right_blink)
-            if left_blink_state and right_blink_state:  # both eyes blink
-                blink_state = True
-            else:
-                blink_state = False
-            return blink_state, left_median, right_median
-        except Exception as err:
-            print(f"blink_detect error: {err}")
-            return None
-
     def draw_dlib_features(self, face_roi: np.ndarray, feature_coordinates: dlib.rectangle):
         '''
         Draw dlib features.
