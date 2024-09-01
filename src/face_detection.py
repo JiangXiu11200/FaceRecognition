@@ -32,6 +32,15 @@ class FaceApp:
         config.logger.info("start system")
 
     def draw_rectangle(self, frame: np.ndarray, coordinate: list):
+        '''Draw bounding box.
+
+        Args:
+            frame (np.ndarray): The frame.
+            coordinate (list): The bounding box coordinates, format is [[x1, y1], [x2, y2]].
+
+        Returns:
+            None
+        '''
         cv2.rectangle(frame, (coordinate[0][0], coordinate[0][1]), (coordinate[1][0], coordinate[1][1]), (0, 255, 0), 2)
 
     def draw_dlib_features(self, face_roi: np.ndarray, feature_coordinates: dlib.rectangle):
