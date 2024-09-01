@@ -10,8 +10,8 @@ import numpy as np
 import package.config as config
 
 
-class calculation:
-    def get_face_boundingbox(self, bounding_box: mediapipe, width: int, height: int):
+class Calculation:
+    def get_face_boundingbox(bounding_box: mediapipe, width: int, height: int):
         '''
         Get the face bounding box coordinates converted by mediapipe data format to the actual image size.
 
@@ -32,7 +32,7 @@ class calculation:
         center = [center_x, center_y]
         return bounding_box, center
 
-    def get_eyes_boundingbox(self, detection: mediapipe, bounding_height: mediapipe, width: int, height: int):
+    def get_eyes_boundingbox(detection: mediapipe, bounding_height: mediapipe, width: int, height: int):
         '''
         Get the eyes bounding box coordinates converted by mediapipe data format to the actual image size.
         
@@ -62,7 +62,7 @@ class calculation:
         bounding_eye_right = [[bounding_eye_right_x1, bounding_eye_right_y1], [bounding_eye_right_x2, bounding_eye_right_y2]]
         return bounding_eye_left, bounding_eye_right
 
-    def grayscale_area(self, eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
+    def grayscale_area(eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
         '''
         Grayscale the eyes ROI and image pre-processing blur.
 
@@ -91,7 +91,7 @@ class calculation:
             config.logger.debug(f"Calculate eyes grayscale area error: {e}")
             return None, None
 
-    def blink_detect(self, eyes_blink: list, blink_count: int, left_median: int, right_median: int):
+    def blink_detect(eyes_blink: list, blink_count: int, left_median: int, right_median: int):
         '''
         Detect blinking of both eyes.
 
@@ -117,8 +117,8 @@ class calculation:
                 blink_state = False
             left_blink = (left_blink > left_median).astype(int)
             right_blink = (right_blink > right_median).astype(int)
-            left_blink_state = self.easy_blink_detect(left_blink)
-            right_blink_state = self.easy_blink_detect(right_blink)
+            left_blink_state = Calculation.easy_blink_detect(left_blink)
+            right_blink_state = Calculation.easy_blink_detect(right_blink)
             if left_blink_state and right_blink_state:  # both eyes blink
                 blink_state = True
             else:
@@ -128,12 +128,12 @@ class calculation:
             print(f"blink_detect error: {err}")
             return None
 
-    def detection_range(self, detct_start: list, detct_end: list, face_box_center_x, face_box_center_y, bounding_box_height, detection_score, \
+    def detection_range(detct_start: list, detct_end: list, face_box_center_x, face_box_center_y, bounding_box_height, detection_score, \
                         minimum_bounding_box_height, minimum_face_detection_score):
         return detct_start[0] < face_box_center_x < detct_end[0] and detct_start[1] < face_box_center_y < detct_end[1] and \
                 bounding_box_height > minimum_bounding_box_height and detection_score > minimum_face_detection_score
 
-    def easy_blink_detect(self, blink_list: np.ndarray):
+    def easy_blink_detect(blink_list: np.ndarray):
         '''
         Check whether to blink.
 
@@ -153,7 +153,7 @@ class calculation:
             state = False
         return state
 
-    def save_feature(self, out_put_path: str, face_descriptor: np.ndarray):
+    def save_feature(out_put_path: str, face_descriptor: np.ndarray):
         '''
         Save face descriptor.
         
@@ -173,7 +173,7 @@ class calculation:
             print("Save feature save_feature mode error: ", err)
             return False
 
-    def face_prediction(self, face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1, \
+    def face_prediction(face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1, \
                         registered_face_descriptor: np.ndarray, sensitivity: float):
         '''
         Predict faces.
@@ -190,8 +190,8 @@ class calculation:
         try:
             start_time = time.time()
             result = False
-            current_face_descriptor, _ = self.feature_extraction(face_roi, dlib_predictor, dlib_face_reco_model)
-            distance = self.euclidean_distance(registered_face_descriptor, current_face_descriptor)
+            current_face_descriptor, _ = Calculation.feature_extraction(face_roi, dlib_predictor, dlib_face_reco_model)
+            distance = Calculation.euclidean_distance(registered_face_descriptor, current_face_descriptor)
             if distance <= sensitivity:
                 config.logger.info("pass.")
                 result = True
@@ -207,7 +207,7 @@ class calculation:
             config.logger.debug(traceback.print_exc())
             return False
 
-    def feature_extraction(self, face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1):
+    def feature_extraction(face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1):
         '''
         Get face descriptor by dlib.
 
@@ -231,7 +231,7 @@ class calculation:
             config.logger.debug(traceback.print_exc())
             return False
 
-    def euclidean_distance(self, registered_face_descriptor: np.ndarray, current_face_descriptor: np.ndarray):
+    def euclidean_distance(registered_face_descriptor: np.ndarray, current_face_descriptor: np.ndarray):
         '''
         Calculate the Euclidean distance between the current face descriptor and the loaded model.
         

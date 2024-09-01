@@ -9,16 +9,15 @@ import dlib
 import mediapipe as mp
 import numpy as np
 
-import package
-from package import config
-from package.settings import Settings
-from package.video_capturer import VideoCapturer
+from package import calculation, config
+from package import settings as system_settings
+from package import video_capturer
 
 
-class FaceApp(package.calculation):
+class FaceApp:
     def __init__(self):
         # system configuration
-        settings = Settings()
+        settings = system_settings.Settings()
         settings.load_setting()
         self.video_config = settings.video_config
         self.sys_config = settings.system_config
@@ -27,7 +26,7 @@ class FaceApp(package.calculation):
         # video capture
         self.video_queue = Queue()
         self.signal_queue = Queue()
-        video_capture = VideoCapturer(self.video_config.rtsp, self.video_queue, self.signal_queue)
+        video_capture = video_capturer.VideoCapturer(self.video_config.rtsp, self.video_queue, self.signal_queue)
         video_capturer_proc = Process(target=video_capture.get_video)
         video_capturer_proc.start()
         config.logger.info("start system")
@@ -90,8 +89,8 @@ class FaceApp(package.calculation):
                             bounding_box_mp = detection_mp.location_data.relative_bounding_box
                             bounding_box_height = round(bounding_box_mp.height, 2)
                             detection_score = round(detection_mp.score[0], 2)
-                            face_bounding_box, center = self.get_face_boundingbox(bounding_box_mp, self.video_config.image_width, self.video_config.image_height)
-                            if not self.detection_range(self.video_config.detection_range_start_point, self.video_config.detection_range_end_point, center[0], center[1], \
+                            face_bounding_box, center = calculation.Calculation.get_face_boundingbox(bounding_box_mp, self.video_config.image_width, self.video_config.image_height)
+                            if not calculation.Calculation.detection_range(self.video_config.detection_range_start_point, self.video_config.detection_range_end_point, center[0], center[1], \
                                                         bounding_box_height, detection_score, self.reco_config.minimum_bounding_box_height, self.reco_config.minimum_face_detection_score):
                                 eyes_blink = [[], []]
                                 face_in_detection_range = False
@@ -114,22 +113,22 @@ class FaceApp(package.calculation):
                                 cv2.circle(frame, (center[0], center[1]), 3, (0, 0, 225), -1)
                         if self.reco_config.enable and average_brightness != 0 and face_in_detection_range:
                             # eyes bounding box
-                            bounding_eye_left, bounding_eye_right = self.get_eyes_boundingbox(detection_mp, bounding_box_mp.height, self.video_config.image_width, self.video_config.image_height)
+                            bounding_eye_left, bounding_eye_right = calculation.Calculation.get_eyes_boundingbox(detection_mp, bounding_box_mp.height, self.video_config.image_width, self.video_config.image_height)
                             if self.sys_config.debug:
                                 self.draw_rectangle(frame, bounding_eye_left)
                                 self.draw_rectangle(frame, bounding_eye_right)
                             eye_left_roi = frame[bounding_eye_left[0][1] : bounding_eye_left[1][1], bounding_eye_left[0][0] : bounding_eye_left[1][0]]
                             eye_right_roi = frame[bounding_eye_right[0][1] : bounding_eye_right[1][1], bounding_eye_right[0][0] : bounding_eye_right[1][0]]
                             # blink detection
-                            left_eye_gary, right_eye_gary =  self.grayscale_area(eye_left_roi, eye_right_roi, grayscale_value)
+                            left_eye_gary, right_eye_gary =  calculation.Calculation.grayscale_area(eye_left_roi, eye_right_roi, grayscale_value)
                             if left_eye_gary is not None or right_eye_gary is not None:
                                 eyes_blink[0].append((left_eye_gary == 0).sum())
                                 eyes_blink[1].append((right_eye_gary == 0).sum())
                             if len(eyes_blink[0]) > 15 and len(eyes_blink[1]) > 15:
-                                blink_state, left_median, right_median = self.blink_detect(eyes_blink, blink_count, left_median, right_median)
+                                blink_state, left_median, right_median = calculation.Calculation.blink_detect(eyes_blink, blink_count, left_median, right_median)
                                 key = cv2.waitKey(1)
                                 if (self.sys_config.debug and key == ord("r")) or (not self.sys_config.debug and blink_state and not enable_execution_interval):  # If debug mode is enabled, prediction can only be performed by pressing "r"
-                                    extraction = Thread(target=self.face_prediction, args=(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, \
+                                    extraction = Thread(target=calculation.Calculation.face_prediction, args=(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, \
                                                         self.reco_config.registered_face_descriptor, self.reco_config.sensitivity))
                                     extraction.start()
                                     enable_execution_interval = True
@@ -147,8 +146,8 @@ class FaceApp(package.calculation):
                         if self.reco_config.set_mode and face_roi is not None:
                             key = cv2.waitKey(1)
                             if key == ord("s"):
-                                face_descriptor, feature_coordinates = self.feature_extraction(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model)
-                                self.save_feature(self.reco_config.face_model, face_descriptor)
+                                face_descriptor, feature_coordinates = calculation.Calculation.feature_extraction(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model)
+                                calculation.Calculation.save_feature(self.reco_config.face_model, face_descriptor)
                                 if self.sys_config.debug:
                                     self.draw_dlib_features(face_roi, feature_coordinates)
                     else:
