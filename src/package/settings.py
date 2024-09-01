@@ -4,7 +4,7 @@ import json
 import dlib
 import numpy as np
 
-import package.config as config
+import src.package.config as config
 
 
 class VideoConfig:

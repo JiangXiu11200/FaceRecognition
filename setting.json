@@ -1,5 +1,6 @@
 {
     "video_config": {
+		"rtsp": 0,
         "image_height": 480,
         "image_width": 640,
         "detection_range_start_point": [170, 120],
@@ -8,14 +9,19 @@
     "sys_config": {
         "debug": true,
         "mode": "recognition",
-        "//_select": "setting recognition"
+		"logs_path": "logs"
     },
     "reco_config": {
-        "minimum_bounding_box_height": 0.40,
-        "minimum_face_detection_score": 0.80
-    },
-    "dlib_predictor": "models/dlib/shape_predictor_68_face_landmarks.dat",
-    "dlib_recognition_model": "models/dlib/dlib_face_recognition_resnet_model_v1.dat",
-    "face_model": "models/face_recognition/model.csv",
-    "logs_path": "logs"
+		"enable": true,
+		"set_mode": true,
+		"dlib_predictor": "models/dlib/shape_predictor_68_face_landmarks.dat",
+		"dlib_recognition_model": "models/dlib/dlib_face_recognition_resnet_model_v1.dat",
+		"face_model": "models/face_recognition/model.csv",
+        "minimum_bounding_box_height": 0.4,
+        "minimum_face_detection_score": 0.8,
+		"eyes_detection_brightness_threshold": 120,
+		"eyes_detection_brightness_value": [80, 40],
+		"sensitivity": 0.4,
+		"consecutive_prediction_intervals": 30
+    }
 }

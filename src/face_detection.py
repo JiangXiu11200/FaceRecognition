@@ -9,9 +9,9 @@ import dlib
 import mediapipe as mp
 import numpy as np
 
-from package import calculation, config
-from package import settings as system_settings
-from package import video_capturer
+from src.package import calculation, config
+from src.package import settings as system_settings
+from src.package import video_capturer
 
 
 class FaceApp:
