@@ -135,8 +135,7 @@ class FaceApp:
                                 eyes_blink[1].append((right_eye_gary == 0).sum())
                             if len(eyes_blink[0]) > 15 and len(eyes_blink[1]) > 15:
                                 blink_state, left_median, right_median = calculation.Calculation.blink_detect(eyes_blink, blink_count, left_median, right_median)
-                                key = cv2.waitKey(1)
-                                if (self.sys_config.debug and key == ord("r")) or (not self.sys_config.debug and blink_state and not enable_execution_interval):  # If debug mode is enabled, prediction can only be performed by pressing "r"
+                                if (self.sys_config.debug and key == ord("r") or key == ord("R")) or (not self.sys_config.debug and blink_state and not enable_execution_interval):  # If debug mode is enabled, prediction can only be performed by pressing "r"
                                     extraction = Thread(target=calculation.Calculation.face_prediction, args=(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model, \
                                                         self.reco_config.registered_face_descriptor, self.reco_config.sensitivity))
                                     extraction.start()
@@ -153,8 +152,7 @@ class FaceApp:
                                     cv2.imshow("eyes_left", left_eye_gary)
                                     cv2.imshow("eyes_right", right_eye_gary)
                         if self.reco_config.set_mode and face_roi is not None:
-                            key = cv2.waitKey(1)
-                            if key == ord("s"):
+                            if key == ord("s") or key == ord("S"):
                                 face_descriptor, feature_coordinates = calculation.Calculation.feature_extraction(face_roi, self.reco_config.dlib_predictor, self.reco_config.dlib_recognition_model)
                                 calculation.Calculation.save_feature(self.reco_config.face_model, face_descriptor)
                                 if self.sys_config.debug:

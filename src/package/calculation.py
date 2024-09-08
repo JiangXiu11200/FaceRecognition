@@ -229,7 +229,7 @@ class Calculation:
         except Exception as err:
             print("feature_extraction error: ", err)
             config.logger.debug(traceback.print_exc())
-            return False
+            return False, False
 
     def euclidean_distance(registered_face_descriptor: np.ndarray, current_face_descriptor: np.ndarray):
         '''

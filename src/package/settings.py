@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 
 import dlib
 import numpy as np
@@ -56,10 +57,13 @@ class RecoConfig:
 
     def load_face_features(self):
         face_features = []
-        with open(self.face_model) as model:
-            rows = csv.reader(model)
-            for row in rows:
-                face_features.append(np.array(row, dtype=float))
+        if os.path.isfile(self.face_model):
+            with open(self.face_model) as model:
+                rows = csv.reader(model)
+                for row in rows:
+                    face_features.append(np.array(row, dtype=float))
+        else:
+            with open(self.face_model, mode="a"): pass
         self.registered_face_descriptor = np.array(face_features)
 
 class Settings:
