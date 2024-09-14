@@ -1,9 +1,4 @@
-import csv
-import time
-import traceback
-
 import cv2
-import dlib
 import mediapipe
 import numpy as np
 
@@ -11,36 +6,36 @@ import src.package.config as config
 
 
 class Calculation:
-    def get_face_boundingbox(bounding_box: mediapipe, width: int, height: int):
+    def __init__(self, image_width, image_height):
+        self.image_width = image_width
+        self.image_height = image_height
+
+    def get_face_boundingbox(self, bounding_box: mediapipe):
         '''
         Get the face bounding box coordinates converted by mediapipe data format to the actual image size.
 
         Args:
             bounding_box (mediapipe.bounding_box): The bounding box coordinates of the face.
-            width (int): The width of the image.
-            height (int): The height of the image.
 
         Returns:
             bounding_box (list): The bounding box coordinates of the face.
             center (list): The center coordinates of the face.
         '''
-        bounding_x1, bounding_y1 = int(bounding_box.xmin * width), int(bounding_box.ymin * height)
-        bounding_x2, bounding_y2 = int(bounding_x1 + bounding_box.width * width), int(bounding_y1 + bounding_box.height * height)
+        bounding_x1, bounding_y1 = int(bounding_box.xmin * self.image_width), int(bounding_box.ymin * self.image_height)
+        bounding_x2, bounding_y2 = int(bounding_x1 + bounding_box.width * self.image_width), int(bounding_y1 + bounding_box.height * self.image_height)
         center_x = (bounding_x1 + bounding_x2) // 2
         center_y = (bounding_y1 + bounding_y2) // 2        
         bounding_box = [[bounding_x1, bounding_y1], [bounding_x2, bounding_y2]]
         center = [center_x, center_y]
         return bounding_box, center
 
-    def get_eyes_boundingbox(detection: mediapipe, bounding_height: mediapipe, width: int, height: int):
+    def get_eyes_boundingbox(self, detection: mediapipe, bounding_height: mediapipe):
         '''
         Get the eyes bounding box coordinates converted by mediapipe data format to the actual image size.
         
         Args:
             detection (mediapipe.detection): The detection data of the face.
             bounding_height (mediapipe.bounding_box): The bounding box height of the face.
-            width (int): The width of the image.
-            height (int): The height of the image.
 
         Returns:
             bounding_eye_left (list): The left eye bounding box coordinates.
@@ -48,9 +43,9 @@ class Calculation:
         '''
         eye_left = detection.location_data.relative_keypoints[0]
         eye_right = detection.location_data.relative_keypoints[1]
-        eye_left_x, eye_left_y = int(eye_left.x * width), int(eye_left.y * height)
-        eye_right_x, eye_right_y = int(eye_right.x * width), int(eye_right.y * height)
-        eye_proportion = (bounding_height * height) * 0.08
+        eye_left_x, eye_left_y = int(eye_left.x * self.image_width), int(eye_left.y * self.image_height)
+        eye_right_x, eye_right_y = int(eye_right.x * self.image_width), int(eye_right.y * self.image_height)
+        eye_proportion = (bounding_height * self.image_height) * 0.08
         bounding_eye_left_x1, bounding_eye_left_y1, \
         bounding_eye_left_x2, bounding_eye_left_y2 = int(eye_left_x - eye_proportion), int(eye_left_y - eye_proportion), \
                                                     int(eye_left_x + eye_proportion), int(eye_left_y + eye_proportion)
@@ -62,7 +57,8 @@ class Calculation:
         bounding_eye_right = [[bounding_eye_right_x1, bounding_eye_right_y1], [bounding_eye_right_x2, bounding_eye_right_y2]]
         return bounding_eye_left, bounding_eye_right
 
-    def grayscale_area(eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
+    @staticmethod
+    def eyes_pre_treatmentsing(eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
         '''
         Grayscale the eyes ROI and image pre-processing blur.
 
@@ -91,6 +87,7 @@ class Calculation:
             config.logger.debug(f"Calculate eyes grayscale area error: {e}")
             return None, None
 
+    @staticmethod
     def blink_detect(eyes_blink: list, blink_count: int, left_median: int, right_median: int):
         '''
         Detect blinking of both eyes.
@@ -117,8 +114,8 @@ class Calculation:
                 blink_state = False
             left_blink = (left_blink > left_median).astype(int)
             right_blink = (right_blink > right_median).astype(int)
-            left_blink_state = Calculation.easy_blink_detect(left_blink)
-            right_blink_state = Calculation.easy_blink_detect(right_blink)
+            left_blink_state = Calculation._easy_eye_list_calculation(left_blink)
+            right_blink_state = Calculation._easy_eye_list_calculation(right_blink)
             if left_blink_state and right_blink_state:  # both eyes blink
                 blink_state = True
             else:
@@ -128,12 +125,8 @@ class Calculation:
             print(f"blink_detect error: {err}")
             return None
 
-    def detection_range(detct_start: list, detct_end: list, face_box_center_x, face_box_center_y, bounding_box_height, detection_score, \
-                        minimum_bounding_box_height, minimum_face_detection_score):
-        return detct_start[0] < face_box_center_x < detct_end[0] and detct_start[1] < face_box_center_y < detct_end[1] and \
-                bounding_box_height > minimum_bounding_box_height and detection_score > minimum_face_detection_score
-
-    def easy_blink_detect(blink_list: np.ndarray):
+    @staticmethod
+    def _easy_eye_list_calculation(blink_list: np.ndarray):
         '''
         Check whether to blink.
 
@@ -152,100 +145,3 @@ class Calculation:
         else:
             state = False
         return state
-
-    def save_feature(out_put_path: str, face_descriptor: np.ndarray):
-        '''
-        Save face descriptor.
-        
-        Args:
-            out_put_path (str): The output path.
-            face_descriptor (np.ndarray): The face descriptor.
-
-        Returns:
-            result (bool): Save status.
-        '''
-        try:
-            with open(out_put_path, mode='a+', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(face_descriptor)
-            return True
-        except Exception as err:
-            print("Save feature save_feature mode error: ", err)
-            return False
-
-    def face_prediction(face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1, \
-                        registered_face_descriptor: np.ndarray, sensitivity: float):
-        '''
-        Predict faces.
-        
-        Args:
-            face_roi (np.ndarray): The face ROI.
-            dlib_predictor (dlib.shape_predictor): The dlib predictor.
-            dlib_face_reco (dlib.face_recognition_model_v1): The dlib face recognition model.
-            registered_face_descriptor (np.ndarray): The registered face descriptor. (face model data)
-
-        Returns:
-            result (bool): Prediction results.
-        '''
-        try:
-            start_time = time.time()
-            result = False
-            current_face_descriptor, _ = Calculation.feature_extraction(face_roi, dlib_predictor, dlib_face_reco_model)
-            distance = Calculation.euclidean_distance(registered_face_descriptor, current_face_descriptor)
-            if distance <= sensitivity:
-                config.logger.info("pass.")
-                result = True
-            else:
-                config.logger.info("fail.")
-                result = False
-            end_time = time.time()
-            execution_time = round(end_time - start_time, 3)
-            config.logger.info(f"Face Recognition Time: {execution_time} sec")
-            return result
-        except Exception as err:
-            print("face_prediction error: ", err)
-            config.logger.debug(traceback.print_exc())
-            return False
-
-    def feature_extraction(face_roi: np.ndarray, dlib_predictor: dlib.shape_predictor, dlib_face_reco_model: dlib.face_recognition_model_v1):
-        '''
-        Get face descriptor by dlib.
-
-        Args:
-            face_roi (np.ndarray): The face ROI.
-            predictor (dlib.shape_predictor): The dlib predictor.
-            dlib_face_reco (dlib.face_recognition_model_v1): The dlib face recognition model.
-            face_features (np.ndarray): The face features.
-
-        Returns:
-            face_descriptor (np.ndarray): The face descriptor.
-        '''
-        try:
-            landmarks_frame = cv2.cvtColor(face_roi, cv2. COLOR_BGR2RGB)
-            dlib_coordinate = dlib.rectangle(0, 0, face_roi.shape[0], face_roi.shape[1])
-            feature_coordinates = dlib_predictor(landmarks_frame, dlib_coordinate)
-            current_face_descriptor = np.array(dlib_face_reco_model.compute_face_descriptor(face_roi, feature_coordinates))
-            return current_face_descriptor, feature_coordinates
-        except Exception as err:
-            print("feature_extraction error: ", err)
-            config.logger.debug(traceback.print_exc())
-            return False, False
-
-    def euclidean_distance(registered_face_descriptor: np.ndarray, current_face_descriptor: np.ndarray):
-        '''
-        Calculate the Euclidean distance between the current face descriptor and the loaded model.
-        
-        Args:
-            registered_face_descriptor (np.ndarray): Registered face descriptors imported by the model.
-            current_face_descriptor (np.ndarray): The current face descriptor.
-
-        Returns:
-            result (float): The Euclidean distance.
-        '''
-        dist_list = []
-        for original_features in registered_face_descriptor:
-            dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
-            dist_list.append(dist)
-        result = min(dist_list)
-        config.logger.debug(f"Minimum euclidean distance: {result}")
-        return result
