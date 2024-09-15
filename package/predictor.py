@@ -66,7 +66,7 @@ class Predictor:
                 result = False
             end_time = time.time()
             execution_time = round(end_time - start_time, 3)
-            config.logger.info(f"Face Recognition Time: {execution_time} sec")
+            config.logger.info(f"Face Recognition Time: {execution_time} sec.")
             return result
         except Exception as err:
             print("face_prediction error: ", err)
@@ -84,6 +84,9 @@ class Predictor:
             face_descriptor (np.ndarray): The face descriptor.
         """
         try:
+            if np.mean(face_roi) < 10:
+                config.logger.error("The image is incorrect.")
+                return None, None
             landmarks_frame = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
             dlib_coordinate = dlib.rectangle(0, 0, face_roi.shape[0], face_roi.shape[1])
             feature_coordinates = self.dlib_predictor(landmarks_frame, dlib_coordinate)
@@ -92,7 +95,7 @@ class Predictor:
         except Exception as err:
             print("feature_extraction error: ", err)
             config.logger.debug(traceback.print_exc())
-            return False, False
+            return None, None
 
     def euclidean_distance(self, current_face_descriptor: np.ndarray):
         """
@@ -104,10 +107,15 @@ class Predictor:
         Returns:
             result (float): The Euclidean distance.
         """
-        dist_list = []
-        for original_features in self.registered_face_descriptor:
-            dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
-            dist_list.append(dist)
-        result = min(dist_list)
-        config.logger.debug(f"Minimum euclidean distance: {result}")
-        return result
+        try:
+            dist_list = []
+            for original_features in self.registered_face_descriptor:
+                dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
+                dist_list.append(dist)
+            result = min(dist_list)
+            config.logger.debug(f"Minimum euclidean distance: {result}")
+            return result
+        except Exception as err:
+            print("euclidean_distance error: ", err)
+            config.logger.debug(traceback.print_exc())
+            return None

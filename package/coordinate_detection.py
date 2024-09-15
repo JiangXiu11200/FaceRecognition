@@ -12,11 +12,15 @@ class CoordinateDetection:
         self.minimum_bounding_box_height = minimum_bounding_box_height
 
     def face_box_in_roi(self, face_box_center_x, face_box_center_y, bounding_box_height, detection_score):
-        if (
-            self.detection_range_start_point[0] < face_box_center_x < self.detection_range_end_point[0]
-            and self.detection_range_start_point[1] < face_box_center_y < self.detection_range_end_point[1]
-            and bounding_box_height > self.minimum_bounding_box_height
-            and detection_score > self.minimum_face_detection_score
-        ):
-            return True
-        return False
+        try:
+            if (
+                self.detection_range_start_point[0] < face_box_center_x < self.detection_range_end_point[0]
+                and self.detection_range_start_point[1] < face_box_center_y < self.detection_range_end_point[1]
+                and bounding_box_height > self.minimum_bounding_box_height
+                and detection_score > self.minimum_face_detection_score
+            ):
+                return True
+            return False
+        except Exception as err:
+            print("face_box_in_roi mode error: ", err)
+            return False

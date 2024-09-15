@@ -131,7 +131,7 @@ class Calculation:
             return blink_state, left_median, right_median
         except Exception as err:
             print(f"blink_detect error: {err}")
-            return None
+            return None, None, None
 
     @staticmethod
     def _easy_eye_list_calculation(blink_list: np.ndarray):
