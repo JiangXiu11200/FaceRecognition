@@ -17,6 +17,7 @@ class VideoConfig:
         self.detection_range_start_point = detection_range_start_point
         self.detection_range_end_point = detection_range_end_point
 
+
 class SystemConfig:
     def __init__(self, debug: bool, mode: str, logs_path: str):
         __slots__ = ["debug", "mode", "logs_path"]
@@ -24,9 +25,22 @@ class SystemConfig:
         self.mode = mode
         self.logs_path = logs_path
 
+
 class RecoConfig:
-    def __init__(self, enable: bool, set_mode: bool, dlib_predictor: str, dlib_recognition_model: str, face_model: str, minimum_bounding_box_height: int, \
-                minimum_face_detection_score: float, eyes_detection_brightness_threshold: int, eyes_detection_brightness_value: list, sensitivity: float, consecutive_prediction_intervals: int):
+    def __init__(
+        self,
+        enable: bool,
+        set_mode: bool,
+        dlib_predictor: str,
+        dlib_recognition_model: str,
+        face_model: str,
+        minimum_bounding_box_height: int,
+        minimum_face_detection_score: float,
+        eyes_detection_brightness_threshold: int,
+        eyes_detection_brightness_value: list,
+        sensitivity: float,
+        consecutive_prediction_intervals: int,
+    ):
         __slots__ = [
             "enable",
             "set_mode",
@@ -39,7 +53,7 @@ class RecoConfig:
             "eyes_detection_brightness_threshold",
             "eyes_detection_brightness_value",
             "sensitivity",
-            "consecutive_prediction_intervals"
+            "consecutive_prediction_intervals",
         ]
         self.enable = enable
         self.set_mode = set_mode
@@ -63,8 +77,10 @@ class RecoConfig:
                 for row in rows:
                     face_features.append(np.array(row, dtype=float))
         else:
-            with open(self.face_model, mode="a"): pass
+            with open(self.face_model, mode="a"):
+                pass
         self.registered_face_descriptor = np.array(face_features)
+
 
 class Settings:
     def __init__(self):

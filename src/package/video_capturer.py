@@ -12,20 +12,20 @@ class VideoCapturer:
         self.signal_queue = signal_queue
 
     def get_video(self):
-        '''
-        Get video stream. \n
-        Initialize VideoCapturer and input video queue and signal queue.
-        
-        Methods:
-            Use video_queue.get() directly to get frames. \n
+        """
+        Get video stream. Initialize VideoCapturer and input video queue and signal queue.
 
-        Args:
-            self.video_queu (Queue)
-            self.signal_queue (Queue)
+        Parameters:
+            rtsp (str): The RTSP URL.
+            video_queue (Queue): The video queue.
+            signal_queue (Queue): Used to interrupt video capture.
 
         Returns:
             None
-        '''
+
+        Methods:
+            Use video_queue.get() directly to get frames.
+        """
         try:
             cap = cv2.VideoCapture(self.rtsp)
             ret, frame = cap.read()

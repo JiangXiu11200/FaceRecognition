@@ -10,8 +10,13 @@ import src.package.config as config
 
 
 class Predictor:
-    def __init__(self, dlib_predictor: dlib.shape_predictor, dlib_recognition_model: dlib.face_recognition_model_v1, \
-                registered_face_descriptor: np.ndarray, sensitivity: float):
+    def __init__(
+        self,
+        dlib_predictor: dlib.shape_predictor,
+        dlib_recognition_model: dlib.face_recognition_model_v1,
+        registered_face_descriptor: np.ndarray,
+        sensitivity: float,
+    ):
         self.dlib_predictor = dlib_predictor
         self.dlib_recognition_model = dlib_recognition_model
         self.registered_face_descriptor = registered_face_descriptor
@@ -19,18 +24,18 @@ class Predictor:
 
     @staticmethod
     def save_feature(out_put_path: str, face_descriptor: np.ndarray):
-        '''
+        """
         Save face descriptor.
-        
-        Args:
+
+        Parameters:
             out_put_path (str): The output path.
             face_descriptor (np.ndarray): The face descriptor.
 
         Returns:
             result (bool): Save status.
-        '''
+        """
         try:
-            with open(out_put_path, mode='a+', newline='') as file:
+            with open(out_put_path, mode="a+", newline="") as file:
                 writer = csv.writer(file)
                 writer.writerow(face_descriptor)
             return True
@@ -39,15 +44,15 @@ class Predictor:
             return False
 
     def face_prediction(self, face_roi: np.ndarray):
-        '''
+        """
         Predict faces.
-        
-        Args:
+
+        Parameters:
             face_roi (np.ndarray): The face ROI.
 
         Returns:
             result (bool): Prediction results.
-        '''
+        """
         try:
             start_time = time.time()
             result = False
@@ -69,17 +74,17 @@ class Predictor:
             return False
 
     def feature_extraction(self, face_roi: np.ndarray):
-        '''
+        """
         Get face descriptor by dlib.
 
-        Args:
+        Parameters:
             face_roi (np.ndarray): The face ROI.
 
         Returns:
             face_descriptor (np.ndarray): The face descriptor.
-        '''
+        """
         try:
-            landmarks_frame = cv2.cvtColor(face_roi, cv2. COLOR_BGR2RGB)
+            landmarks_frame = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
             dlib_coordinate = dlib.rectangle(0, 0, face_roi.shape[0], face_roi.shape[1])
             feature_coordinates = self.dlib_predictor(landmarks_frame, dlib_coordinate)
             current_face_descriptor = np.array(self.dlib_recognition_model.compute_face_descriptor(face_roi, feature_coordinates))
@@ -90,15 +95,15 @@ class Predictor:
             return False, False
 
     def euclidean_distance(self, current_face_descriptor: np.ndarray):
-        '''
+        """
         Calculate the Euclidean distance between the current face descriptor and the loaded model.
-        
-        Args:
+
+        Parameters:
             current_face_descriptor (np.ndarray): The current face descriptor.
 
         Returns:
             result (float): The Euclidean distance.
-        '''
+        """
         dist_list = []
         for original_features in self.registered_face_descriptor:
             dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
