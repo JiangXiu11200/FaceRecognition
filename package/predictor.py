@@ -6,7 +6,7 @@ import cv2
 import dlib
 import numpy as np
 
-import src.package.config as config
+import package.config as config
 
 
 class Predictor:

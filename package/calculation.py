@@ -2,7 +2,7 @@ import cv2
 import mediapipe
 import numpy as np
 
-import src.package.config as config
+import package.config as config
 
 
 class Calculation:

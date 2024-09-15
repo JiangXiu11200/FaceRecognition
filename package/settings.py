@@ -5,7 +5,7 @@ import os
 import dlib
 import numpy as np
 
-import src.package.config as config
+import package.config as config
 
 
 class VideoConfig:
