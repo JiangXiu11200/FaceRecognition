@@ -22,7 +22,8 @@ class TestPredictor(unittest.TestCase):
             ]
         )
         self.sensitivity = 0.4
-        self.image = cv2.imread("./tests/test_data/Steven_Paul_Jobs.jpg")
+        data = np.load("./tests/test_data/test_image.npz")
+        self.image = data["test_img"]
         self.predictor = predictor.Predictor(dlib_predictor, dlib_recognition_model, self.face_descriptor, self.sensitivity)
 
     # test feature_extraction

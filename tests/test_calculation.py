@@ -11,7 +11,11 @@ from package import calculation
 class TestCalculation(unittest.TestCase):
     def setUp(self):
         self.calculation = calculation.Calculation(774, 800)
-        self.test_img = cv2.imread("./tests/test_data/Steven_Paul_Jobs.jpg")
+        # self.test_img = cv2.imread("./tests/test_data/Steven_Paul_Jobs.jpg")
+
+        data = numpy.load("./tests/test_data/test_image.npz")
+        # 提取圖像
+        self.test_img = data["test_img"]
         self.detection_mp, self.bounding_box_mp = self.setup_mediapipe()
         self.bounding_box_height = round(self.bounding_box_mp.height, 2)
 
