@@ -36,6 +36,8 @@ class FaceApp:
             self.reco_config.registered_face_descriptor,
             self.reco_config.sensitivity,
         )
+        self.fps = 0
+        self.fps_count = 0
         # video capture
         self.video_queue = Queue()
         self.signal_queue = Queue()
@@ -45,7 +47,7 @@ class FaceApp:
         config.logger.info("start system")
 
     @staticmethod
-    def draw_rectangle(frame: np.ndarray, coordinate: list):
+    def _draw_rectangle(frame: np.ndarray, coordinate: list):
         """Draw bounding box.
 
         Parameters:
@@ -58,7 +60,7 @@ class FaceApp:
         cv2.rectangle(frame, (coordinate[0][0], coordinate[0][1]), (coordinate[1][0], coordinate[1][1]), (0, 255, 0), 2)
 
     @staticmethod
-    def draw_text(frame: np.ndarray, text: str, coordinate: list, color: tuple):
+    def _draw_text(frame: np.ndarray, text: str, coordinate: list, color: tuple):
         """
         Draw text.
 
@@ -71,10 +73,10 @@ class FaceApp:
         Returns:
             None
         """
-        cv2.putText(frame, text, coordinate, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
+        cv2.putText(frame, text, coordinate, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 1, cv2.LINE_AA)
 
     @staticmethod
-    def draw_dlib_features(face_roi: np.ndarray, feature_coordinates: dlib.rectangle):
+    def _draw_dlib_features(face_roi: np.ndarray, feature_coordinates: dlib.rectangle):
         """
         Draw dlib features.
 
@@ -92,39 +94,65 @@ class FaceApp:
             )
         cv2.imshow("face_roi", face_roi)
 
+    def _eyes_preprocessing(self, frame: np.ndarray, bounding_eye_left: list, bounding_eye_right: list, grayscale_value: int):
+        """
+        Eyes preprocessing.
+
+        Parameters:
+            frame (np.ndarray): The frame.
+            bounding_eye_left (list): The left eye bounding box coordinates.
+            bounding_eye_right (list): The right eye bounding box coordinates.
+            grayscale_value (int): The grayscale value.
+
+        Returns:
+            left_eye_gary (np.ndarray): The left eye grayscale.
+            right_eye_gary (np.ndarray): The right eye grayscale
+        """
+        if self.sys_config.debug:
+            FaceApp._draw_rectangle(frame, bounding_eye_left)
+            FaceApp._draw_rectangle(frame, bounding_eye_right)
+        eye_left_roi = frame[bounding_eye_left[0][1] : bounding_eye_left[1][1], bounding_eye_left[0][0] : bounding_eye_left[1][0]]
+        eye_right_roi = frame[bounding_eye_right[0][1] : bounding_eye_right[1][1], bounding_eye_right[0][0] : bounding_eye_right[1][0]]
+        # blink detection
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(eye_left_roi, eye_right_roi, grayscale_value)
+        return left_eye_gary, right_eye_gary
+
+    def _fps_counter(self):
+        if time.time() - self.start_time >= 1:
+            self.fps = self.fps_count
+            self.fps_count = 0
+            self.start_time = time.time()
+
     def run(self):
         # fps parameters
-        fps = 0
-        fps_count = 0
-        start_time = time.time()
+        self.start_time = time.time()
         # detection parameters
-        face_roi = None
-        eyes_blink = [[], []]
-        face_in_detection_range = False
-        enable_execution_interval = False
-        interval_count = 0
+        face_roi: np.array = None
+        eyes_blink: list[list] = [[], []]
+        face_in_detection_range: bool = False
+        enable_execution_interval: bool = False
+        interval_count: int = 0
+        detection_results_queue = Queue()
+        detection_results: bool = False
         # blink detection parameters
-        left_median = 1
-        right_median = 1
-        blink_state = False
-        blink_count = 0
-        average_brightness = 0
-        grayscale_value = 0
+        left_median: int = 1
+        right_median: int = 1
+        blink_state: bool = False
+        blink_count: int = 0
+        average_brightness: np.float64 = 0
+        grayscale_value: int = 0
         with self.mp_face_detection as face_detection:
             while True:
                 try:
-                    fps_count += 1
-                    if time.time() - start_time >= 1:
-                        fps = fps_count
-                        fps_count = 0
-                        start_time = time.time()
+                    self.fps_count += 1
+                    self._fps_counter()
                     if self.video_queue.empty():
                         cv2.waitKey(1)
                     key = cv2.waitKey(1)
                     frame = cv2.resize(
                         self.video_queue.get(), (self.video_config.image_width, self.video_config.image_height), interpolation=cv2.INTER_AREA
                     )
-                    FaceApp.draw_rectangle(frame, [self.video_config.detection_range_start_point, self.video_config.detection_range_end_point])
+                    FaceApp._draw_rectangle(frame, [self.video_config.detection_range_start_point, self.video_config.detection_range_end_point])
                     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     results = face_detection.process(frame_bgr)
                     if results.detections:
@@ -134,7 +162,7 @@ class FaceApp:
                             bounding_box_height = round(bounding_box_mp.height, 2)
                             detection_score = round(detection_mp.score[0], 2)
                             face_bounding_box, center = self.calculation.get_face_boundingbox(bounding_box_mp)
-                            if not self.coordinate_detection.face_box_in_roi(center[0], center[1], bounding_box_height, detection_score):
+                            if not self.coordinate_detection.face_box_in_roi(center, bounding_box_height, detection_score):
                                 eyes_blink = [[], []]
                                 face_in_detection_range = False
                                 blink_count = 0
@@ -152,22 +180,11 @@ class FaceApp:
                                 else:
                                     grayscale_value = self.reco_config.eyes_detection_brightness_value[1]
                             if self.sys_config.debug:
-                                FaceApp.draw_rectangle(frame, face_bounding_box)
-                                cv2.circle(frame, (center[0], center[1]), 3, (0, 0, 225), -1)
+                                FaceApp._draw_rectangle(frame, face_bounding_box)
                         if self.reco_config.enable and average_brightness != 0 and face_in_detection_range:
                             # eyes bounding box
                             bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(detection_mp, bounding_box_mp.height)
-                            if self.sys_config.debug:
-                                FaceApp.draw_rectangle(frame, bounding_eye_left)
-                                FaceApp.draw_rectangle(frame, bounding_eye_right)
-                            eye_left_roi = frame[bounding_eye_left[0][1] : bounding_eye_left[1][1], bounding_eye_left[0][0] : bounding_eye_left[1][0]]
-                            eye_right_roi = frame[
-                                bounding_eye_right[0][1] : bounding_eye_right[1][1], bounding_eye_right[0][0] : bounding_eye_right[1][0]
-                            ]
-                            # blink detection
-                            left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(
-                                eye_left_roi, eye_right_roi, grayscale_value
-                            )
+                            left_eye_gary, right_eye_gary = self._eyes_preprocessing(frame, bounding_eye_left, bounding_eye_right, grayscale_value)
                             if left_eye_gary is not None or right_eye_gary is not None:
                                 eyes_blink[0].append((left_eye_gary == 0).sum())
                                 eyes_blink[1].append((right_eye_gary == 0).sum())
@@ -178,7 +195,13 @@ class FaceApp:
                                 if (self.sys_config.debug and key == ord("r") or key == ord("R")) or (
                                     not self.sys_config.debug and blink_state and not enable_execution_interval
                                 ):  # If debug mode is enabled, prediction can only be performed by pressing "r"
-                                    extraction = Thread(target=self.predictor.face_prediction, args=(face_roi,))
+                                    extraction = Thread(
+                                        target=self.predictor.face_prediction,
+                                        args=(
+                                            face_roi,
+                                            detection_results_queue,
+                                        ),
+                                    )
                                     extraction.start()
                                     enable_execution_interval = True
                                     interval_count = 0
@@ -186,26 +209,36 @@ class FaceApp:
                                     interval_count += 1
                                     if interval_count >= self.reco_config.consecutive_prediction_intervals:
                                         enable_execution_interval = False
+                                        detection_results = False
                                         interval_count = 0
                                 if self.sys_config.debug:
-                                    color = (0, 255, 0) if blink_state else (0, 0, 255)
-                                    FaceApp.draw_text(frame, str(blink_state), (bounding_eye_left[0][0], bounding_eye_left[0][1] - 5), color)
                                     cv2.imshow("eyes_left", left_eye_gary)
                                     cv2.imshow("eyes_right", right_eye_gary)
                         if self.reco_config.set_mode and face_roi is not None:
                             if key == ord("s") or key == ord("S"):
-                                face_descriptor, feature_coordinates = self.predictor.feature_extraction(
-                                    face_roi,
-                                )
+                                face_descriptor, feature_coordinates = self.predictor.feature_extraction(face_roi)
                                 predictor.Predictor.save_feature(self.reco_config.face_model, face_descriptor)
                                 if self.sys_config.debug:
-                                    FaceApp.draw_dlib_features(face_roi, feature_coordinates)
+                                    FaceApp._draw_dlib_features(face_roi, feature_coordinates)
                     else:
                         eyes_blink = [[], []]
                         blink_count = 0
                         average_brightness = 0
                         face_roi = None
-                    FaceApp.draw_text(frame, str(fps), (10, 30), (0, 0, 255))
+                    if not detection_results_queue.empty():
+                        detection_result = detection_results_queue.get()
+                        if detection_result:
+                            detection_results = True
+                        else:
+                            detection_results = False
+                    if self.sys_config.debug:
+                        face_color = (0, 255, 0) if detection_results else (0, 0, 255)
+                        eyes_color = (0, 255, 0) if blink_state else (0, 0, 255)
+                        FaceApp._draw_text(frame, "FPS: " + str(self.fps), (10, 30), (0, 0, 255))
+                        FaceApp._draw_text(frame, "Eyes detection:", (10, 70), (0, 0, 255))
+                        FaceApp._draw_text(frame, str(blink_state), (260, 70), eyes_color)
+                        FaceApp._draw_text(frame, "Face detection:", (10, 110), (0, 0, 255))
+                        FaceApp._draw_text(frame, str(detection_results), (260, 110), face_color)
                     cv2.imshow("video_out", frame)
                     if key == ord("q"):
                         self.signal_queue.put(1)

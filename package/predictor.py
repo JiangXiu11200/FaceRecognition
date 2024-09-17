@@ -1,6 +1,7 @@
 import csv
 import time
 import traceback
+from multiprocessing import Queue
 
 import cv2
 import dlib
@@ -43,7 +44,7 @@ class Predictor:
             print("Save feature save_feature mode error: ", err)
             return False
 
-    def face_prediction(self, face_roi: np.ndarray):
+    def face_prediction(self, face_roi: np.ndarray, detection_results: Queue):
         """
         Predict faces.
 
@@ -60,9 +61,11 @@ class Predictor:
             distance = self.euclidean_distance(current_face_descriptor)
             if distance <= self.sensitivity:
                 config.logger.info("pass.")
+                detection_results.put(True)
                 result = True
             else:
                 config.logger.info("fail.")
+                detection_results.put(False)
                 result = False
             end_time = time.time()
             execution_time = round(end_time - start_time, 3)

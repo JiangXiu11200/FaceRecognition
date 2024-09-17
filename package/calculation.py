@@ -66,9 +66,9 @@ class Calculation:
         return bounding_eye_left, bounding_eye_right
 
     @staticmethod
-    def eyes_pre_treatmentsing(eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
+    def preprocess_eye_regions(eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
         """
-        Grayscale the eyes ROI and image pre-processing blur.
+        Grayscale the eyes ROI and image processing.
 
         Parameters:
             eye_left_roi (np.ndarray): The left eye ROI.

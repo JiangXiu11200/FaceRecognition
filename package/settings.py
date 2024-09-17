@@ -92,8 +92,8 @@ class Settings:
         with open(config.SETTING_DIRECTORY) as f:
             data = json.load(f)
             self.updata_setting(data["video_config"], data["sys_config"], data["reco_config"])
-        if self.system_config.debug == True:
-            self.reco_config.consecutive_prediction_intervals = 9999
+        # if self.system_config.debug == True:
+        #     self.reco_config.consecutive_prediction_intervals = 9999
 
     def updata_setting(self, video_config, system_config, reco_config):
         self.video_config = VideoConfig(**video_config)
