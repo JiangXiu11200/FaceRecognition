@@ -116,76 +116,76 @@ class TestCalculation(unittest.TestCase):
 
     # test eyes_pre_treatmentsing
     def test_eyes_pre_treatmentsing_correctness(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
         self.assertEqual(left_eye_gary[30][30], 255)
         self.assertEqual(left_eye_gary.shape, (51, 51))
         self.assertEqual(right_eye_gary[30][30], 255)
         self.assertEqual(right_eye_gary.shape, (51, 51))
 
     def test_get_eyes_boundingbox_output_type(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
         self.assertIsInstance(left_eye_gary, numpy.ndarray)
         self.assertIsInstance(right_eye_gary, numpy.ndarray)
 
     def test_eyes_pre_treatmentsing_invalid_input(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing("invalid_input", "invalid_input", "invalid_input")
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions("invalid_input", "invalid_input", "invalid_input")
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(None, None, None)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(None, None, None)
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
             self.eye_left_roi, self.eye_right_roi, str(self.grayscale_value)
         )
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
 
     def test_eyes_pre_treatmentsing_boundary_zero(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing([], [], [])
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions([], [], [])
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
 
     def test_eyes_pre_treatmentsing_performance(self):
         start_time = time.time()
-        calculation.Calculation.eyes_pre_treatmentsing(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
         elapsed_time = time.time() - start_time
         # 性能判斷, 假設期望在 0.1 秒內完成
         self.assertLess(elapsed_time, 0.1, "Performance degraded, took too long to process.")
 
     # blink_detect
     def test_eyes_pre_treatmentsing_correctness(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
         self.assertEqual(left_eye_gary[30][30], 255)
         self.assertEqual(left_eye_gary.shape, (51, 51))
         self.assertEqual(right_eye_gary[30][30], 255)
         self.assertEqual(right_eye_gary.shape, (51, 51))
 
     def test_get_eyes_boundingbox_output_type(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
         self.assertIsInstance(left_eye_gary, numpy.ndarray)
         self.assertIsInstance(right_eye_gary, numpy.ndarray)
 
     def test_eyes_pre_treatmentsing_invalid_input(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing("invalid_input", "invalid_input", "invalid_input")
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions("invalid_input", "invalid_input", "invalid_input")
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(None, None, None)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(None, None, None)
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing(
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
             self.eye_left_roi, self.eye_right_roi, str(self.grayscale_value)
         )
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
 
     def test_eyes_pre_treatmentsing_boundary_zero(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.eyes_pre_treatmentsing([], [], [])
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions([], [], [])
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
 
     def test_eyes_pre_treatmentsing_performance(self):
         start_time = time.time()
-        calculation.Calculation.eyes_pre_treatmentsing(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
         elapsed_time = time.time() - start_time
         # 性能判斷, 假設期望在 0.1 秒內完成
         self.assertLess(elapsed_time, 0.1, "Performance degraded, took too long to process.")
@@ -245,7 +245,7 @@ class TestCalculation(unittest.TestCase):
 
     def test_blink_detect_performance(self):
         start_time = time.time()
-        calculation.Calculation.eyes_pre_treatmentsing(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
         elapsed_time = time.time() - start_time
         # 性能判斷, 假設期望在 0.1 秒內完成
         self.assertLess(elapsed_time, 0.1, "Performance degraded, took too long to process.")
