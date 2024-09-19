@@ -19,10 +19,9 @@ class VideoConfig:
 
 
 class SystemConfig:
-    def __init__(self, debug: bool, mode: str, logs_path: str):
-        __slots__ = ["debug", "mode", "logs_path"]
+    def __init__(self, debug: bool, logs_path: str):
+        __slots__ = ["debug", "logs_path"]
         self.debug = debug
-        self.mode = mode
         self.logs_path = logs_path
 
 

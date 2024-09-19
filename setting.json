@@ -1,36 +1,35 @@
 {
   "video_config": {
-    "rtsp": 0,
-    "image_height": 720,
-    "image_width": 1280,
+    "rtsp": "<RTSP URL (str) or Web Camera (int)>",
+    "image_height": "<Image height (int)>",
+    "image_width": "<Image width (int)>",
     "detection_range_start_point": [
-      370,
-      200
+      "<Bounding box top-left coordinate point x (int)>",
+      "<<Bounding box top-left coordinate point y (int)>"
     ],
     "detection_range_end_point": [
-      910,
-      520
+      "<Bounding box bottom-right coordinate point x (int)>",
+      "<Bounding box bottom-right coordinate point y (int)"
     ]
   },
   "sys_config": {
     "debug": true,
-    "mode": "recognition",
-    "logs_path": "logs"
+    "logs_path": "<Directory path for output logs (str)>"
   },
   "reco_config": {
     "enable": true,
-    "set_mode": true,
-    "dlib_predictor": "models/dlib/shape_predictor_68_face_landmarks.dat",
-    "dlib_recognition_model": "models/dlib/dlib_face_recognition_resnet_model_v1.dat",
-    "face_model": "models/face_recognition/model.csv",
-    "minimum_bounding_box_height": 0.4,
-    "minimum_face_detection_score": 0.8,
-    "eyes_detection_brightness_threshold": 120,
+    "set_mode": "<Set to true to save facial features (bool)>",
+    "dlib_predictor": "<shape_predictor_68_face_landmarks.dat model path (str)>",
+    "dlib_recognition_model": "<dlib_face_recognition_resnet_model_v1.dat model path (str)>",
+    "face_model": "<Face recognition model.csv path (str)>",
+    "minimum_bounding_box_height": "<Face distance threshold (float)>",
+    "minimum_face_detection_score": "<Face detection confidence score (float)>",
+    "eyes_detection_brightness_threshold": "<Average brightness threshold (int)>",
     "eyes_detection_brightness_value": [
-      50,
-      40
+      "<threshold value in brighter environment (int)>",
+      "<threshold value in darker environment (int)>"
     ],
-    "sensitivity": 0.4,
-    "consecutive_prediction_intervals": 30
+    "sensitivity": "<Euclidean distance difference for face detection (float)>",
+    "consecutive_prediction_intervals": "<Detection interval fps (int)>"
   }
 }
