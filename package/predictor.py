@@ -112,6 +112,9 @@ class Predictor:
         """
         try:
             dist_list = []
+            if len(self.registered_face_descriptor) == 0:
+                config.logger.error("Model data is empty.")
+                return 999
             for original_features in self.registered_face_descriptor:
                 dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
                 dist_list.append(dist)
