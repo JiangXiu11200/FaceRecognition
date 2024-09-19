@@ -61,11 +61,11 @@ class Predictor:
             distance = self.euclidean_distance(current_face_descriptor)
             if distance <= self.sensitivity:
                 config.logger.info("pass.")
-                detection_results.put(True)
+                detection_results.put([True, distance])
                 result = True
             else:
                 config.logger.info("fail.")
-                detection_results.put(False)
+                detection_results.put([False, distance])
                 result = False
             end_time = time.time()
             execution_time = round(end_time - start_time, 3)

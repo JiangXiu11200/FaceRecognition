@@ -94,7 +94,17 @@ class FaceApp:
             )
         cv2.imshow("face_roi", face_roi)
 
-    def _eyes_preprocessing(self, frame: np.ndarray, bounding_eye_left: list, bounding_eye_right: list, grayscale_value: int):
+    def _draw_result_information(self, frame: np.ndarray, detection_results: bool, blink_state: bool, detection_distance: int):
+        face_color = (0, 255, 0) if detection_results else (0, 0, 255)
+        eyes_color = (0, 255, 0) if blink_state else (0, 0, 255)
+        FaceApp._draw_text(frame, "Eyes detection:", (10, 70), (0, 0, 255))
+        FaceApp._draw_text(frame, str(blink_state), (260, 70), eyes_color)
+        FaceApp._draw_text(frame, "Face detection:", (10, 110), (0, 0, 255))
+        FaceApp._draw_text(frame, str(detection_results), (260, 110), face_color)
+        FaceApp._draw_text(frame, "Detection distance:", (10, 150), (0, 0, 255))
+        FaceApp._draw_text(frame, str(detection_distance), (320, 150), face_color)
+
+    def _eyes_preprocessing(self, frame: np.ndarray, bounding_eye_left: list, bounding_eye_right: list, threshold_value: int):
         """
         Eyes preprocessing.
 
@@ -102,7 +112,7 @@ class FaceApp:
             frame (np.ndarray): The frame.
             bounding_eye_left (list): The left eye bounding box coordinates.
             bounding_eye_right (list): The right eye bounding box coordinates.
-            grayscale_value (int): The grayscale value.
+            threshold_value (int): The threshold value.
 
         Returns:
             left_eye_gary (np.ndarray): The left eye grayscale.
@@ -114,7 +124,7 @@ class FaceApp:
         eye_left_roi = frame[bounding_eye_left[0][1] : bounding_eye_left[1][1], bounding_eye_left[0][0] : bounding_eye_left[1][0]]
         eye_right_roi = frame[bounding_eye_right[0][1] : bounding_eye_right[1][1], bounding_eye_right[0][0] : bounding_eye_right[1][0]]
         # blink detection
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(eye_left_roi, eye_right_roi, grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(eye_left_roi, eye_right_roi, threshold_value)
         return left_eye_gary, right_eye_gary
 
     def _fps_counter(self):
@@ -134,13 +144,14 @@ class FaceApp:
         interval_count: int = 0
         detection_results_queue = Queue()
         detection_results: bool = False
+        detection_distance: int = 0
         # blink detection parameters
         left_median: int = 1
         right_median: int = 1
         blink_state: bool = False
         blink_count: int = 0
         average_brightness: np.float64 = 0
-        grayscale_value: int = 0
+        threshold_value: int = 0
         with self.mp_face_detection as face_detection:
             while True:
                 try:
@@ -176,15 +187,16 @@ class FaceApp:
                                 _, _, value = cv2.split(hsv_image)
                                 average_brightness = np.mean(value)
                                 if average_brightness > self.reco_config.eyes_detection_brightness_threshold:
-                                    grayscale_value = self.reco_config.eyes_detection_brightness_value[0]
+                                    threshold_value = self.reco_config.eyes_detection_brightness_value[0]
                                 else:
-                                    grayscale_value = self.reco_config.eyes_detection_brightness_value[1]
+                                    threshold_value = self.reco_config.eyes_detection_brightness_value[1]
+                                config.logger.debug(f"eyes bounding box average brightness: {average_brightness}")
                             if self.sys_config.debug:
                                 FaceApp._draw_rectangle(frame, face_bounding_box)
                         if self.reco_config.enable and average_brightness != 0 and face_in_detection_range:
                             # eyes bounding box
                             bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(detection_mp, bounding_box_mp.height)
-                            left_eye_gary, right_eye_gary = self._eyes_preprocessing(frame, bounding_eye_left, bounding_eye_right, grayscale_value)
+                            left_eye_gary, right_eye_gary = self._eyes_preprocessing(frame, bounding_eye_left, bounding_eye_right, threshold_value)
                             if left_eye_gary is not None or right_eye_gary is not None:
                                 eyes_blink[0].append((left_eye_gary == 0).sum())
                                 eyes_blink[1].append((right_eye_gary == 0).sum())
@@ -227,18 +239,14 @@ class FaceApp:
                         face_roi = None
                     if not detection_results_queue.empty():
                         detection_result = detection_results_queue.get()
-                        if detection_result:
+                        detection_distance = round(detection_result[1], 2)
+                        if detection_result[0]:
                             detection_results = True
                         else:
                             detection_results = False
+                    self._draw_result_information(frame, detection_results, blink_state, detection_distance)
                     if self.sys_config.debug:
-                        face_color = (0, 255, 0) if detection_results else (0, 0, 255)
-                        eyes_color = (0, 255, 0) if blink_state else (0, 0, 255)
                         FaceApp._draw_text(frame, "FPS: " + str(self.fps), (10, 30), (0, 0, 255))
-                        FaceApp._draw_text(frame, "Eyes detection:", (10, 70), (0, 0, 255))
-                        FaceApp._draw_text(frame, str(blink_state), (260, 70), eyes_color)
-                        FaceApp._draw_text(frame, "Face detection:", (10, 110), (0, 0, 255))
-                        FaceApp._draw_text(frame, str(detection_results), (260, 110), face_color)
                     cv2.imshow("video_out", frame)
                     if key == ord("q"):
                         self.signal_queue.put(1)
