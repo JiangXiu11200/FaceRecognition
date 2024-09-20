@@ -76,6 +76,8 @@ class RecoConfig:
                 for row in rows:
                     face_features.append(np.array(row, dtype=float))
         else:
+            directory_path = os.path.dirname(self.face_model)
+            os.makedirs(directory_path, exist_ok=True)
             with open(self.face_model, mode="a"):
                 pass
         self.registered_face_descriptor = np.array(face_features)
