@@ -248,11 +248,9 @@ class FaceApp:
                     if self.sys_config.debug:
                         FaceApp._draw_text(frame, "FPS: " + str(self.fps), (10, 30), (0, 0, 255))
                     cv2.imshow("video_out", frame)
-                    if key == ord("q"):
+                    if key == ord("q") or key == ord("Q"):
                         self.signal_queue.put(1)
                         break
-                    if key == ord(" "):
-                        cv2.waitKey(0)
                 except Exception as e:
                     traceback.print_exc()
                     self.signal_queue.put(1)
