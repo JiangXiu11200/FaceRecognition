@@ -190,7 +190,7 @@ class FaceApp:
                                     threshold_value = self.reco_config.eyes_detection_brightness_value[0]
                                 else:
                                     threshold_value = self.reco_config.eyes_detection_brightness_value[1]
-                                config.logger.debug(f"eyes bounding box average brightness: {average_brightness}")
+                                config.logger.debug(f"face bounding box average brightness: {average_brightness}")
                             if self.sys_config.debug:
                                 FaceApp._draw_rectangle(frame, face_bounding_box)
                         if self.reco_config.enable and average_brightness != 0 and face_in_detection_range:
