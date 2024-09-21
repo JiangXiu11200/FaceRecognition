@@ -1,6 +1,6 @@
 # Face Recognition_en
 
-[English Version]() | [中文版](./assest/readme/README_zh-tw.md)
+[English Version]() | [繁體中文版](./README_zh-tw.md)
 
 [![Static Badge](https://img.shields.io/badge/Python-v3.9.6-356d9f)](https://www.python.org/downloads/release/python-396/)[![Static Badge](https://img.shields.io/badge/Python%20Dlib-v19.22.0-ee6464)](https://pypi.org/project/dlib-bin/19.22.0/)[![Static Badge](https://img.shields.io/badge/Mediapipe-v0.10.5-d56dcb)](https://pypi.org/project/mediapipe/)[![Static Badge](https://img.shields.io/badge/cmake-v3.30.2-014aae)](https://pypi.org/project/cmake/)
 
@@ -150,7 +150,7 @@ The system directory contains a settings.json configuration file.
     - set_mode: Enable feature extraction functionality, outputs detected faces to models.csv
     - dlib_predictor: Path to the Dlib 68 face landmarks model
     - dlib_recognition_model: Path to Dlib face recognition ResNet model
-    - face_model: Path to models.csv
+    - face_model: Path to store the registered facial feature model (.csv file)
     - minimum_bounding_box_height: Face distance threshold; a larger number means the face must be closer to the camera for recognition. The default for FHD cameras is 0.4
     - minimum_face_detection_score: Face detection confidence score, default is 0.8
     - eyes_detection_brightness_threshold: Preprocessing average brightness threshold for blink detection

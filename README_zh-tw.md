@@ -1,6 +1,6 @@
 # Face Recognition_zh-TW
 
-[English](#english-version) | [繁體中文版](#中文版)
+[English](./README.md) | [繁體中文版]()
 
 [![Static Badge](https://img.shields.io/badge/Python-v3.9.6-356d9f)](https://www.python.org/downloads/release/python-396/)[![Static Badge](https://img.shields.io/badge/Python%20Dlib-v19.22.0-ee6464)](https://pypi.org/project/dlib-bin/19.22.0/)[![Static Badge](https://img.shields.io/badge/Mediapipe-v0.10.5-d56dcb)](https://pypi.org/project/mediapipe/)[![Static Badge](https://img.shields.io/badge/cmake-v3.30.2-014aae)](https://pypi.org/project/cmake/)
 
@@ -221,25 +221,25 @@ python face_detection.py
 ## 操作實例
 
 ### 1. 啟動系統
-![image](../images/1_Start_the_system.png)
+![image](./assets/images/1_Start_the_system.png)
 
 ### 2. 登錄人臉
 
 按下鍵盤'S'或's'，系統會透過dlib模型取得人臉特徵點，並輸出至model.csv中。
-![image](../images/2_Face_Registration.png)
+![image](./assets/images/2_Face_Registration.png)
 
 model.csv中儲存了登錄的人臉特徵資訊。
-![image](../images/2.The_model_csv_file.png)
+![image](./assets/images2.The_model_csv_file.png)
 
 ### 3. 人臉辨識
 
 重新啟動系統，使其將model載入。啟動後，按下鍵盤'R'或'r'進行辨識。
-![image](../images/3_Face_Recognition.png)
+![image](./assets/images/3_Face_Recognition.png)
 
 ### 4. 眨眼參數設定
 
 系統設定檔中包含了`eyes_detection_brightness_threshold`和`eyes_detection_brightness_value`兩項參數。當臉部靠近鏡頭時，系統會計算臉部bounding box的平均亮度，並顯示在log檔中:
-![image](../images/4_Blink_Parameters_Configuration.png)
+![image](./assets/images/4_Blink_Parameters_Configuration.png)
 `eyes_detection_brightness_threshold`用以設置該亮度門檻，`eyes_detection_brightness_value`為一個一維陣列list[int[], int[]]，用以設定眼睛bounding box的二值化參數。
 ```json=
 {
@@ -256,7 +256,7 @@ model.csv中儲存了登錄的人臉特徵資訊。
 }
 ```
 若當前的平均亮度大於所設定的平均亮度門檻時，則eyes_detection_brightness_value[0]會是當前的門檻；反之，小於平均亮度門檻，擇eyes_detection_brightness_value[1]會是當前的門檻。這樣的方式並不好，因為環境光的改變通常是較難控制的因素，這在未來我將會繼續改進該功能，但目前的設定已經可以應對一些室內明亮並且無太大光影變化的環境。
-![image](../images/5_four_eyes.png)
+![image](./assets/images/5_four_eyes.png)
 實際測試眼睛在睜眼與閉眼時的前處理結果，透過物理的已知，人類在正常的眨眼時間約250ms，以30FPS攝影機做計算，每幀約33.3333ms，故我們可以得到每一次眨眼約會有7~8幀的變化。
-![眨眼判斷流程圖](../images/6_processing.png)
+![眨眼判斷流程圖](./assets/images/6_processing.png)
 透過逐幀除理的方式，計算連續16幀(也就是一次的眨眼與睜眼的時間) 我們就可以很明顯地看出眨眼的動作變化。
