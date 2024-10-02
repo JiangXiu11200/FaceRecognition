@@ -262,3 +262,15 @@ If the current average brightness exceeds the set threshold, `eyes_detection_bri
 Through real tests, we can observe the preprocessing results when eyes are open or closed. Based on known human behavior, the normal blink time is about 250ms. With a 30FPS camera, each frame is approximately 33.3333ms, so there will be around 7-8 frames per blink.
 ![眨眼判斷流程圖](./assets/images/6_processing.png)
 By processing frame by frame and calculating over 16 consecutive frames (the time for one blink and reopen), we can clearly observe the blink action.
+
+### License
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+### Third-party Libraries
+
+This project uses the following third-party libraries:
+
+- [MediaPipe](https://github.com/google/mediapipe): Licensed under the Apache License 2.0.
+- [dlib](http://dlib.net/): Licensed under the Boost Software License 1.0.
+
+Please refer to their respective licenses for details.

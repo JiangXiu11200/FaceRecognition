@@ -260,3 +260,16 @@ model.csv中儲存了登錄的人臉特徵資訊。
 實際測試眼睛在睜眼與閉眼時的前處理結果，透過物理的已知，人類在正常的眨眼時間約250ms，以30FPS攝影機做計算，每幀約33.3333ms，故我們可以得到每一次眨眼約會有7~8幀的變化。
 ![眨眼判斷流程圖](./assets/images/6_processing.png)
 透過逐幀除理的方式，計算連續16幀(也就是一次的眨眼與睜眼的時間) 我們就可以很明顯地看出眨眼的動作變化。
+
+## 授權條款
+
+此專案採用 MIT 授權條款，詳情請參閱 [LICENSE](LICENSE) 。
+
+### 第三方函式庫
+
+此專案使用以下第三方函式庫：
+
+- [MediaPipe](https://github.com/google/mediapipe)：採用 Apache 2.0 授權條款。
+- [dlib](http://dlib.net/)：採用 Boost Software License 1.0 授權條款。
+
+請參閱各自的授權條款以了解詳細資訊。
