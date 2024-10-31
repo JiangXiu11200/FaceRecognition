@@ -1,71 +1,51 @@
 import csv
-import json
 import os
+from dataclasses import dataclass, field
 
 import dlib
 import numpy as np
+from dynaconf import Dynaconf
 
 import package.config as config
 
 
+@dataclass
 class VideoConfig:
-    def __init__(self, rtsp: str, image_height: int, image_width: int, detection_range_start_point: list, detection_range_end_point: list):
-        __slots__ = ["rtsp", "image_height", "image_width", "detection_range_start_point", "detection_range_end_point"]
-        self.rtsp = rtsp
-        self.image_height = image_height
-        self.image_width = image_width
-        self.detection_range_start_point = detection_range_start_point
-        self.detection_range_end_point = detection_range_end_point
+    __solts__ = ["rtsp", "image_height", "image_width", "detection_range_start_point", "detection_range_end_point"]
+    rtsp: str
+    image_height: int
+    image_width: int
+    detection_range_start_point: list
+    detection_range_end_point: list
 
 
+@dataclass
 class SystemConfig:
-    def __init__(self, debug: bool, logs_path: str):
-        __slots__ = ["debug", "logs_path"]
-        self.debug = debug
-        self.logs_path = logs_path
+    __slots__ = ["debug", "logs_path"]
+    debug: bool
+    logs_path: str
 
 
+@dataclass
 class RecoConfig:
-    def __init__(
-        self,
-        enable: bool,
-        set_mode: bool,
-        dlib_predictor: str,
-        dlib_recognition_model: str,
-        face_model: str,
-        minimum_bounding_box_height: int,
-        minimum_face_detection_score: float,
-        eyes_detection_brightness_threshold: int,
-        eyes_detection_brightness_value: list,
-        sensitivity: float,
-        consecutive_prediction_intervals: int,
-    ):
-        __slots__ = [
-            "enable",
-            "set_mode",
-            "dlib_predictor",
-            "dlib_recognition_model",
-            "face_model",
-            "minimum_bounding_box_height",
-            "minimum_face_detection_score",
-            "face_features",
-            "eyes_detection_brightness_threshold",
-            "eyes_detection_brightness_value",
-            "sensitivity",
-            "consecutive_prediction_intervals",
-        ]
-        self.enable = enable
-        self.set_mode = set_mode
-        self.dlib_predictor = dlib.shape_predictor(dlib_predictor)
-        self.dlib_recognition_model = dlib.face_recognition_model_v1(dlib_recognition_model)
-        self.face_model = face_model
-        self.minimum_bounding_box_height = minimum_bounding_box_height
-        self.minimum_face_detection_score = minimum_face_detection_score
-        self.eyes_detection_brightness_threshold = eyes_detection_brightness_threshold
-        self.eyes_detection_brightness_value = eyes_detection_brightness_value
-        self.sensitivity = sensitivity
-        self.consecutive_prediction_intervals = consecutive_prediction_intervals
-        self.registered_face_descriptor: np.ndarray = None
+    enable: bool
+    set_mode: bool
+    dlib_predictor: str
+    dlib_recognition_model: str
+    face_model: str
+    minimum_bounding_box_height: int
+    minimum_face_detection_score: float
+    eyes_detection_brightness_threshold: int
+    eyes_detection_brightness_value: list
+    sensitivity: float
+    consecutive_prediction_intervals: int
+    registered_face_descriptor: np.ndarray = field(init=False, default=None)
+
+    def __post_init__(self):
+        # Initialize dlib models
+        self.dlib_predictor = dlib.shape_predictor(self.dlib_predictor)
+        self.dlib_recognition_model = dlib.face_recognition_model_v1(self.dlib_recognition_model)
+        # Load face features
         self.load_face_features()
 
     def load_face_features(self):
@@ -76,6 +56,7 @@ class RecoConfig:
                 for row in rows:
                     face_features.append(np.array(row, dtype=float))
         else:
+            # Create the directory if it does not exist
             directory_path = os.path.dirname(self.face_model)
             os.makedirs(directory_path, exist_ok=True)
             with open(self.face_model, mode="a"):
@@ -90,9 +71,8 @@ class Settings:
         self.reco_config: RecoConfig = None
 
     def load_setting(self):
-        with open(config.SETTING_DIRECTORY) as f:
-            data = json.load(f)
-            self.updata_setting(data["video_config"], data["sys_config"], data["reco_config"])
+        settings = Dynaconf(settings_files=[config.SETTING_DIRECTORY])
+        self.updata_setting(settings.video_config, settings.sys_config, settings.reco_config)
         # if self.system_config.debug == True:
         #     self.reco_config.consecutive_prediction_intervals = 9999
 
