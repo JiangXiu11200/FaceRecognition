@@ -2,3 +2,4 @@ opencv-python>=4.10
 numpy==1.26.4
 dlib==19.22.0
 mediapipe==0.10.5
+dynaconf==3.2.6
