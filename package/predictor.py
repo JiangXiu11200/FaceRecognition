@@ -2,6 +2,7 @@ import csv
 import time
 import traceback
 from multiprocessing import Queue
+from typing import Optional
 
 import cv2
 import dlib
@@ -24,7 +25,7 @@ class Predictor:
         self.sensitivity = sensitivity
 
     @staticmethod
-    def save_feature(out_put_path: str, face_descriptor: np.ndarray):
+    def save_feature(out_put_path: str, face_descriptor: np.ndarray) -> bool:
         """
         Save face descriptor.
 
@@ -44,7 +45,7 @@ class Predictor:
             print("Save feature save_feature mode error: ", err)
             return False
 
-    def face_prediction(self, face_roi: np.ndarray, detection_results: Queue):
+    def face_prediction(self, face_roi: np.ndarray, detection_results: Queue) -> bool:
         """
         Predict faces.
 
@@ -76,7 +77,9 @@ class Predictor:
             config.logger.debug(traceback.print_exc())
             return False
 
-    def feature_extraction(self, face_roi: np.ndarray):
+    def feature_extraction(
+        self, face_roi: np.ndarray
+    ) -> tuple[Optional[np.ndarray], Optional[dlib.full_object_detection]]:
         """
         Get face descriptor by dlib.
 
@@ -102,7 +105,7 @@ class Predictor:
             config.logger.debug(traceback.print_exc())
             return None, None
 
-    def euclidean_distance(self, current_face_descriptor: np.ndarray):
+    def euclidean_distance(self, current_face_descriptor: np.ndarray) -> float:
         """
         Calculate the Euclidean distance between the current face descriptor and the loaded model.
 

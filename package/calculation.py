@@ -10,7 +10,7 @@ class Calculation:
         self.image_width = image_width
         self.image_height = image_height
 
-    def get_face_boundingbox(self, bounding_box: mediapipe):
+    def get_face_boundingbox(self, bounding_box: mediapipe) -> tuple[list, list]:
         """
         Get the face bounding box coordinates converted by mediapipe data format to the actual image size.
 
@@ -32,7 +32,7 @@ class Calculation:
         center = [center_x, center_y]
         return bounding_box, center
 
-    def get_eyes_boundingbox(self, detection: mediapipe, bounding_height: mediapipe):
+    def get_eyes_boundingbox(self, detection: mediapipe, bounding_height: mediapipe) -> tuple[list, list]:
         """
         Get the eyes bounding box coordinates converted by mediapipe data format to the actual image size.
 
@@ -70,7 +70,9 @@ class Calculation:
         return bounding_eye_left, bounding_eye_right
 
     @staticmethod
-    def preprocess_eye_regions(eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int):
+    def preprocess_eye_regions(
+        eye_left_roi: np.ndarray, eye_right_roi: np.ndarray, threshold_value: int
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Grayscale the eyes ROI and image processing.
 
@@ -100,7 +102,7 @@ class Calculation:
             return None, None
 
     @staticmethod
-    def blink_detect(eyes_blink: list, blink_count: int, left_median: int, right_median: int):
+    def blink_detect(eyes_blink: list, blink_count: int, left_median: int, right_median: int) -> tuple[bool, int, int]:
         """
         Detect blinking of both eyes.
 
@@ -138,7 +140,7 @@ class Calculation:
             return None, None, None
 
     @staticmethod
-    def _easy_eye_list_calculation(blink_list: np.ndarray):
+    def _easy_eye_list_calculation(blink_list: np.ndarray) -> bool:
         """
         Check whether to blink.
 
