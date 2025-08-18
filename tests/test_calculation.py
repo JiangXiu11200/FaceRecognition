@@ -87,12 +87,16 @@ class TestCalculation(unittest.TestCase):
 
     # test get_eyes_boundingbox
     def test_get_get_eyes_boundingbox_correctness(self):
-        bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(self.detection_mp, self.bounding_box_height)
+        bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(
+            self.detection_mp, self.bounding_box_height
+        )
         self.assertEqual(bounding_eye_left, [[241, 238], [292, 289]])
         self.assertEqual(bounding_eye_right, [[369, 238], [420, 289]])
 
     def test_get_eyes_boundingbox_output_type(self):
-        bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(self.detection_mp, self.bounding_box_height)
+        bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(
+            self.detection_mp, self.bounding_box_height
+        )
         self.assertIsInstance(bounding_eye_left, list)
         self.assertIsInstance(bounding_eye_right, list)
 
@@ -117,19 +121,25 @@ class TestCalculation(unittest.TestCase):
 
     # test eyes_pre_treatmentsing
     def test_eyes_pre_treatmentsing_correctness(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
+            self.eye_left_roi, self.eye_right_roi, self.grayscale_value
+        )
         self.assertEqual(left_eye_gary[30][30], 255)
         self.assertEqual(left_eye_gary.shape, (51, 51))
         self.assertEqual(right_eye_gary[30][30], 255)
         self.assertEqual(right_eye_gary.shape, (51, 51))
 
     def test_get_eyes_boundingbox_output_type(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
+            self.eye_left_roi, self.eye_right_roi, self.grayscale_value
+        )
         self.assertIsInstance(left_eye_gary, numpy.ndarray)
         self.assertIsInstance(right_eye_gary, numpy.ndarray)
 
     def test_eyes_pre_treatmentsing_invalid_input(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions("invalid_input", "invalid_input", "invalid_input")
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
+            "invalid_input", "invalid_input", "invalid_input"
+        )
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
         left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(None, None, None)
@@ -155,19 +165,25 @@ class TestCalculation(unittest.TestCase):
 
     # blink_detect
     def test_eyes_pre_treatmentsing_correctness(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
+            self.eye_left_roi, self.eye_right_roi, self.grayscale_value
+        )
         self.assertEqual(left_eye_gary[30][30], 255)
         self.assertEqual(left_eye_gary.shape, (51, 51))
         self.assertEqual(right_eye_gary[30][30], 255)
         self.assertEqual(right_eye_gary.shape, (51, 51))
 
     def test_get_eyes_boundingbox_output_type(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(self.eye_left_roi, self.eye_right_roi, self.grayscale_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
+            self.eye_left_roi, self.eye_right_roi, self.grayscale_value
+        )
         self.assertIsInstance(left_eye_gary, numpy.ndarray)
         self.assertIsInstance(right_eye_gary, numpy.ndarray)
 
     def test_eyes_pre_treatmentsing_invalid_input(self):
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions("invalid_input", "invalid_input", "invalid_input")
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
+            "invalid_input", "invalid_input", "invalid_input"
+        )
         self.assertEqual(left_eye_gary, None)
         self.assertEqual(right_eye_gary, None)
         left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(None, None, None)

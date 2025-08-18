@@ -27,7 +27,7 @@ class VideoCapturer:
             Use video_queue.get() directly to get frames.
         """
         try:
-            cap = cv2.VideoCapture(self.rtsp)
+            cap = cv2.VideoCapture(self.rtsp, cv2.CAP_AVFOUNDATION)
             ret, frame = cap.read()
             while ret:
                 if not self.signal_queue.empty():
@@ -36,7 +36,7 @@ class VideoCapturer:
                 frame = cv2.flip(frame, 1)
                 self.video_queue.put(frame)
                 cv2.waitKey(1)
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
         cap.release()
         os._exit(0)

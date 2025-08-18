@@ -9,9 +9,8 @@ import dlib
 import mediapipe as mp
 import numpy as np
 
-from package import calculation, config, coordinate_detection, predictor
+from package import calculation, config, coordinate_detection, predictor, video_capturer
 from package import settings as system_settings
-from package import video_capturer
 
 
 class FaceApp:
@@ -22,7 +21,9 @@ class FaceApp:
         self.video_config = settings.video_config
         self.sys_config = settings.system_config
         self.reco_config = settings.reco_config
-        self.mp_face_detection = mp.solutions.face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5)
+        self.mp_face_detection = mp.solutions.face_detection.FaceDetection(
+            model_selection=0, min_detection_confidence=0.5
+        )
         self.coordinate_detection = coordinate_detection.CoordinateDetection(
             self.video_config.detection_range_start_point,
             self.video_config.detection_range_end_point,
@@ -90,11 +91,19 @@ class FaceApp:
         for i in range(68):
             cv2.circle(face_roi, (feature_coordinates.part(i).x, feature_coordinates.part(i).y), 3, (0, 0, 255), 2)
             cv2.putText(
-                face_roi, str(i), (feature_coordinates.part(i).x, feature_coordinates.part(i).y), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 0, 0), 1
+                face_roi,
+                str(i),
+                (feature_coordinates.part(i).x, feature_coordinates.part(i).y),
+                cv2.FONT_HERSHEY_COMPLEX,
+                0.5,
+                (255, 0, 0),
+                1,
             )
         cv2.imshow("face_roi", face_roi)
 
-    def _draw_result_information(self, frame: np.ndarray, detection_results: bool, blink_state: bool, detection_distance: int):
+    def _draw_result_information(
+        self, frame: np.ndarray, detection_results: bool, blink_state: bool, detection_distance: int
+    ):
         face_color = (0, 255, 0) if detection_results else (0, 0, 255)
         eyes_color = (0, 255, 0) if blink_state else (0, 0, 255)
         FaceApp._draw_text(frame, "Eyes detection:", (10, 70), (0, 0, 255))
@@ -104,7 +113,9 @@ class FaceApp:
         FaceApp._draw_text(frame, "Detection distance:", (10, 150), (0, 0, 255))
         FaceApp._draw_text(frame, str(detection_distance), (320, 150), face_color)
 
-    def _eyes_preprocessing(self, frame: np.ndarray, bounding_eye_left: list, bounding_eye_right: list, threshold_value: int):
+    def _eyes_preprocessing(
+        self, frame: np.ndarray, bounding_eye_left: list, bounding_eye_right: list, threshold_value: int
+    ):
         """
         Eyes preprocessing.
 
@@ -121,10 +132,16 @@ class FaceApp:
         if self.sys_config.debug:
             FaceApp._draw_rectangle(frame, bounding_eye_left)
             FaceApp._draw_rectangle(frame, bounding_eye_right)
-        eye_left_roi = frame[bounding_eye_left[0][1] : bounding_eye_left[1][1], bounding_eye_left[0][0] : bounding_eye_left[1][0]]
-        eye_right_roi = frame[bounding_eye_right[0][1] : bounding_eye_right[1][1], bounding_eye_right[0][0] : bounding_eye_right[1][0]]
+        eye_left_roi = frame[
+            bounding_eye_left[0][1] : bounding_eye_left[1][1], bounding_eye_left[0][0] : bounding_eye_left[1][0]
+        ]
+        eye_right_roi = frame[
+            bounding_eye_right[0][1] : bounding_eye_right[1][1], bounding_eye_right[0][0] : bounding_eye_right[1][0]
+        ]
         # blink detection
-        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(eye_left_roi, eye_right_roi, threshold_value)
+        left_eye_gary, right_eye_gary = calculation.Calculation.preprocess_eye_regions(
+            eye_left_roi, eye_right_roi, threshold_value
+        )
         return left_eye_gary, right_eye_gary
 
     def _fps_counter(self):
@@ -161,9 +178,14 @@ class FaceApp:
                         cv2.waitKey(1)
                     key = cv2.waitKey(1)
                     frame = cv2.resize(
-                        self.video_queue.get(), (self.video_config.image_width, self.video_config.image_height), interpolation=cv2.INTER_AREA
+                        self.video_queue.get(),
+                        (self.video_config.image_width, self.video_config.image_height),
+                        interpolation=cv2.INTER_AREA,
                     )
-                    FaceApp._draw_rectangle(frame, [self.video_config.detection_range_start_point, self.video_config.detection_range_end_point])
+                    FaceApp._draw_rectangle(
+                        frame,
+                        [self.video_config.detection_range_start_point, self.video_config.detection_range_end_point],
+                    )
                     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     results = face_detection.process(frame_bgr)
                     if results.detections:
@@ -173,14 +195,19 @@ class FaceApp:
                             bounding_box_height = round(bounding_box_mp.height, 2)
                             detection_score = round(detection_mp.score[0], 2)
                             face_bounding_box, center = self.calculation.get_face_boundingbox(bounding_box_mp)
-                            if not self.coordinate_detection.face_box_in_roi(center, bounding_box_height, detection_score):
+                            if not self.coordinate_detection.face_box_in_roi(
+                                center, bounding_box_height, detection_score
+                            ):
                                 eyes_blink = [[], []]
                                 face_in_detection_range = False
                                 blink_count = 0
                                 average_brightness = 0
                                 continue
                             blink_count += 1
-                            face_roi = frame[face_bounding_box[0][1] : face_bounding_box[1][1], face_bounding_box[0][0] : face_bounding_box[1][0]]
+                            face_roi = frame[
+                                face_bounding_box[0][1] : face_bounding_box[1][1],
+                                face_bounding_box[0][0] : face_bounding_box[1][0],
+                            ]
                             face_in_detection_range = np.all(np.array(face_roi.shape) != 0)
                             if average_brightness == 0 and face_in_detection_range and blink_count % 5 == 0:
                                 hsv_image = cv2.cvtColor(face_roi, cv2.COLOR_BGR2HSV)
@@ -195,8 +222,12 @@ class FaceApp:
                                 FaceApp._draw_rectangle(frame, face_bounding_box)
                         if self.reco_config.enable and average_brightness != 0 and face_in_detection_range:
                             # eyes bounding box
-                            bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(detection_mp, bounding_box_mp.height)
-                            left_eye_gary, right_eye_gary = self._eyes_preprocessing(frame, bounding_eye_left, bounding_eye_right, threshold_value)
+                            bounding_eye_left, bounding_eye_right = self.calculation.get_eyes_boundingbox(
+                                detection_mp, bounding_box_mp.height
+                            )
+                            left_eye_gary, right_eye_gary = self._eyes_preprocessing(
+                                frame, bounding_eye_left, bounding_eye_right, threshold_value
+                            )
                             if left_eye_gary is not None or right_eye_gary is not None:
                                 eyes_blink[0].append((left_eye_gary == 0).sum())
                                 eyes_blink[1].append((right_eye_gary == 0).sum())
@@ -251,7 +282,7 @@ class FaceApp:
                     if key == ord("q") or key == ord("Q"):
                         self.signal_queue.put(1)
                         break
-                except Exception as e:
+                except Exception:
                     traceback.print_exc()
                     self.signal_queue.put(1)
                     time.sleep(1)

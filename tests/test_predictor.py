@@ -24,7 +24,9 @@ class TestPredictor(unittest.TestCase):
         self.sensitivity = 0.4
         data = np.load("./tests/test_data/test_image.npz")
         self.image = data["test_img"]
-        self.predictor = predictor.Predictor(dlib_predictor, dlib_recognition_model, self.face_descriptor, self.sensitivity)
+        self.predictor = predictor.Predictor(
+            dlib_predictor, dlib_recognition_model, self.face_descriptor, self.sensitivity
+        )
 
     # test feature_extraction
     def test_feature_extraction_correctness(self):

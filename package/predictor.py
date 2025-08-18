@@ -93,7 +93,9 @@ class Predictor:
             landmarks_frame = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
             dlib_coordinate = dlib.rectangle(0, 0, face_roi.shape[0], face_roi.shape[1])
             feature_coordinates = self.dlib_predictor(landmarks_frame, dlib_coordinate)
-            current_face_descriptor = np.array(self.dlib_recognition_model.compute_face_descriptor(face_roi, feature_coordinates))
+            current_face_descriptor = np.array(
+                self.dlib_recognition_model.compute_face_descriptor(face_roi, feature_coordinates)
+            )
             return current_face_descriptor, feature_coordinates
         except Exception as err:
             print("feature_extraction error: ", err)

@@ -22,8 +22,9 @@ class Calculation:
             center (list): The center coordinates of the face.
         """
         bounding_x1, bounding_y1 = int(bounding_box.xmin * self.image_width), int(bounding_box.ymin * self.image_height)
-        bounding_x2, bounding_y2 = int(bounding_x1 + bounding_box.width * self.image_width), int(
-            bounding_y1 + bounding_box.height * self.image_height
+        bounding_x2, bounding_y2 = (
+            int(bounding_x1 + bounding_box.width * self.image_width),
+            int(bounding_y1 + bounding_box.height * self.image_height),
         )
         center_x = (bounding_x1 + bounding_x2) // 2
         center_y = (bounding_y1 + bounding_y2) // 2
@@ -62,7 +63,10 @@ class Calculation:
         )
 
         bounding_eye_left = [[bounding_eye_left_x1, bounding_eye_left_y1], [bounding_eye_left_x2, bounding_eye_left_y2]]
-        bounding_eye_right = [[bounding_eye_right_x1, bounding_eye_right_y1], [bounding_eye_right_x2, bounding_eye_right_y2]]
+        bounding_eye_right = [
+            [bounding_eye_right_x1, bounding_eye_right_y1],
+            [bounding_eye_right_x2, bounding_eye_right_y2],
+        ]
         return bounding_eye_left, bounding_eye_right
 
     @staticmethod
