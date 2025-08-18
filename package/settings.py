@@ -30,6 +30,7 @@ class SystemConfig:
 class RecoConfig:
     enable: bool
     set_mode: bool
+    enable_blink_detection: bool
     dlib_predictor: str
     dlib_recognition_model: str
     face_model: str

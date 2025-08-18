@@ -19,6 +19,7 @@
   "reco_config": {
     "enable": true,
     "set_mode": "<Set to true to save facial features (bool)>",
+    "enable_blink_detection": "<Enable blink detection (bool)>",
     "dlib_predictor": "<shape_predictor_68_face_landmarks.dat model path (str)>",
     "dlib_recognition_model": "<dlib_face_recognition_resnet_model_v1.dat model path (str)>",
     "face_model": "<Face recognition model.csv path (str)>",
