@@ -16,11 +16,14 @@ Dlib itself has facial tracking capabilities, but its tracking speed is slow. Th
 - OS: Windows / Mac OS / ubuntu (Any system that supports Python and packages)
 - Application: Indoor bright fluorescent light space
 - Python packages:
-    - Python 3.9+
-    - Python Dlib 19.22.0
-    - Mediapipe 0.10.5
+    - Python 3.9,
+    - ruff 0.12.5
+    - dynaconf 3.2.6
+    - numpy 1.26.4
+    - dlib 19.22.0
+    - mediapipe 0.10.5
     - cmake 3.30.2+
-    - OpenCV 4.10.0+
+    - opencv-python 4.10.0+
 
 ## Installation
 
@@ -29,23 +32,18 @@ Dlib itself has facial tracking capabilities, but its tracking speed is slow. Th
 git clone https://github.com/JiangXiu11200/FaceRecognition.git
 ```
 
-### Install the required packages for python
+### Install uv environment tools
 
-Install cmake.
+Install uv (You can refer to [GitHub: astral/uv](https://github.com/astral-sh/uv))
 ```
-pip install cmake==3.30.2
-```
-
-Execute requirements.txt to install other python packages.
-```
-pip install -r requirements.txt
+pip install uv
 ```
 
-If you encounter build failure errors during Dlib installation, you can first check if CMake is installed correctly, and then try running the following command to install version 19.22.0:
+Though uv and pyproject to build virtual environment
+```
+uv init
+```
 
-```
-python -m pip install dlib==19.22.0
-```
 
 ### Download Dlib model
 - Official website:
@@ -79,6 +77,7 @@ FaceRecognition
   │      └─ shape_predictor_68_face_landmarks.dat
   ├──*package*
   │      ├─ __init__.py
+  │      ├─ blink_detector.py
   │      ├─ calculation.py
   │      ├─ config.py
   │      ├─ coordinate_detection.py
@@ -118,6 +117,7 @@ The system directory contains a settings.json configuration file.
   "reco_config": {
     "enable": true,
     "set_mode": "<Set to true to save facial features (bool)>",
+    "enable_blink_detection": "<Enable blink detection (bool)>",
     "dlib_predictor": "<shape_predictor_68_face_landmarks.dat model path (str)>",
     "dlib_recognition_model": "<dlib_face_recognition_resnet_model_v1.dat model path (str)>",
     "face_model": "<Face recognition model.csv path (str)>",
@@ -148,6 +148,7 @@ The system directory contains a settings.json configuration file.
 - reco_config: Face recognition parameters
     - enable: Enable detection functionality
     - set_mode: Enable feature extraction functionality, outputs detected faces to models.csv
+    - enable_blink_detection: Enable eyes blink detection
     - dlib_predictor: Path to the Dlib 68 face landmarks model
     - dlib_recognition_model: Path to Dlib face recognition ResNet model
     - face_model: Path to store the registered facial feature model (.csv file)
@@ -184,6 +185,7 @@ Place the dlib model in the /models/dlib/ directory and use the Web Camera on yo
   "reco_config": {
     "enable": true,
     "set_mode": true,
+    "enable_blink_detection": true,
     "dlib_predictor": "models/dlib/shape_predictor_68_face_landmarks.dat",
     "dlib_recognition_model": "models/dlib/dlib_face_recognition_resnet_model_v1.dat",
     "face_model": "models/face_recognition/model.csv",
@@ -203,7 +205,7 @@ Place the dlib model in the /models/dlib/ directory and use the Web Camera on yo
 ### Execution
 
 ```
-python face_detection.py
+uv run python face_detection.py
 ```
 
 ### Debug mode operation method

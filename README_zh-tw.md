@@ -15,11 +15,14 @@ Dlib本身具備人臉追蹤功能，但其追蹤速度緩慢，因此我引入�
 - OS: Windows / Mac OS / ubuntu (任何支援Python和所需套件的系統)
 - Application: 室內明亮環境
 - Python packages:
-    - Python 3.9+
-    - Python Dlib 19.22.0
-    - Mediapipe 0.10.5
+    - Python 3.9,
+    - ruff 0.12.5
+    - dynaconf 3.2.6
+    - numpy 1.26.4
+    - dlib 19.22.0
+    - mediapipe 0.10.5
     - cmake 3.30.2+
-    - OpenCV 4.10.0+
+    - opencv-python 4.10.0+
 
 ## Installation
 
@@ -28,22 +31,18 @@ Dlib本身具備人臉追蹤功能，但其追蹤速度緩慢，因此我引入�
 https://github.com/JiangXiu11200/FaceRecognition.git
 ```
 
-### 下載所需套件
+### 下載 uv 環境管理工具
 
-下載 cmake 3.30.2版
+下載 uv tools (參考[GitHub: astral/uv](https://github.com/astral-sh/uv))
 ```
-pip install cmake==3.30.2
-```
-
-執行requirements.txt 安裝套件
-```
-pip install -r requirements.txt
+pip install uv
 ```
 
-如果在Dlib安裝過程中遇到Build失敗等相關錯誤，可利用```pip list```檢查CMake是否安裝正確，然後再嘗試執行下列指令安裝19.22.0版本：
+透過 uv 與 pyproject 建立虛擬環境
 ```
-python -m pip install dlib==19.22.0
+uv init
 ```
+
 
 ### 下載Dlib模型
 - 官方網站:
@@ -77,6 +76,7 @@ FaceRecognition
   │      └─ shape_predictor_68_face_landmarks.dat
   ├──*package*
   │      ├─ __init__.py
+  │      ├─ blink_detector.py
   │      ├─ calculation.py
   │      ├─ config.py
   │      ├─ coordinate_detection.py
@@ -116,6 +116,7 @@ FaceRecognition
   "reco_config": {
     "enable": true,
     "set_mode": "<Set to true to save facial features (bool)>",
+    "enable_blink_detection": "<Enable blink detection (bool)>",
     "dlib_predictor": "<shape_predictor_68_face_landmarks.dat model path (str)>",
     "dlib_recognition_model": "<dlib_face_recognition_resnet_model_v1.dat model path (str)>",
     "face_model": "<Face recognition model.csv path (str)>",
@@ -144,6 +145,7 @@ FaceRecognition
 - reco_config: 人臉辨識參數minimum_face_detection_score: 
     - enable: 開啟檢測功能
     - set_mode: 開啟特徵擷取功能，會輸出當前鏡頭下人臉到models.csv
+    - enable_blink_detection: 開啟眨眼辨識功能
     - dlib_predictor: Dlib 68 face landmarks模型路徑
     - dlib_recognition_model: Dlibface recognition resnet模型路徑
     - face_model: 存放登錄的人臉特徵模型路徑 (.csv file)
@@ -180,6 +182,7 @@ FaceRecognition
   "reco_config": {
     "enable": true,
     "set_mode": true,
+    "enable_blink_detection": true,
     "dlib_predictor": "models/dlib/shape_predictor_68_face_landmarks.dat",
     "dlib_recognition_model": "models/dlib/dlib_face_recognition_resnet_model_v1.dat",
     "face_model": "models/face_recognition/model.csv",
@@ -199,7 +202,7 @@ FaceRecognition
 ### Execution
 
 ```
-python face_detection.py
+uv run python face_detection.py
 ```
 
 ### Debug mode operation method
