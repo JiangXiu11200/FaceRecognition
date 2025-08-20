@@ -40,7 +40,7 @@ pip install uv
 
 透過 uv 與 pyproject 建立虛擬環境
 ```
-uv init
+uv sync
 ```
 
 

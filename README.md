@@ -41,7 +41,7 @@ pip install uv
 
 Though uv and pyproject to build virtual environment
 ```
-uv init
+uv sync
 ```
 
 
