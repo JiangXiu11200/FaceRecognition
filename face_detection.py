@@ -1,9 +1,13 @@
-import os
+import asyncio
+import base64
+import threading
 import time
 import traceback
-from multiprocessing import Process, Queue
-from threading import Thread
-from typing import Optional
+from datetime import datetime
+from enum import Enum
+from multiprocessing import Queue
+from pathlib import Path
+from typing import Any, Optional
 
 import cv2
 import dlib
@@ -15,14 +19,46 @@ from package import settings as system_settings
 from package.blink_detector import BlinkDetector
 
 
+class RunMode(Enum):
+    STANDALONE = "standalone"
+    FASTAPI = "fastapi"
+
+
 class FaceApp:
-    def __init__(self):
-        # system configuration
-        settings = system_settings.Settings()
-        settings.load_setting()
-        self.video_config = settings.video_config
-        self.sys_config = settings.system_config
-        self.reco_config = settings.reco_config
+    def __init__(
+        self,
+        mode: RunMode = RunMode.STANDALONE,
+        config_source: Optional[Any] = None,
+        frame_queue: Optional[Any] = None,
+        log_queue: Optional[Any] = None,
+        external_detection_queue: Optional[Queue] = None,
+    ):
+        """
+        Initialize FaceApp.
+
+        Args:
+            mode: startup mode (RunMode.STANDALONE or RunMode.FASTAPI)
+            config_source: Optional source for configuration data (if None, uses system_settings)
+            frame_queue: FastAPI mode streaming frame queue
+            log_queue: FastAPI mode logging queue
+            external_detection_queue: Optional external queue for detection results (if None, creates a new Queue)
+        """
+        self.mode = mode
+        self.frame_queue = frame_queue
+        self.log_queue = log_queue
+        self.running = True
+
+        # Initialize config adapter
+        if mode == RunMode.STANDALONE or config_source is None:
+            settings = system_settings.Settings()
+            settings.load_setting()
+            self.video_config = settings.video_config
+            self.sys_config = settings.system_config
+            self.reco_config = settings.reco_config
+        else:
+            self.video_config = config_source.video_config
+            self.sys_config = config_source.system_config
+            self.reco_config = config_source.reco_config
 
         # MediaPipe face detection
         self.mp_face_detection = mp.solutions.face_detection.FaceDetection(
@@ -59,11 +95,26 @@ class FaceApp:
         # Video capture
         self.video_queue = Queue()
         self.signal_queue = Queue()
-        video_capture = video_capturer.VideoCapturer(self.video_config.rtsp, self.video_queue, self.signal_queue)
-        video_capturer_proc = Process(target=video_capture.get_video)
-        video_capturer_proc.start()
-        config.logger.info("start system")
+
+        # External detection queue
+        self.detection_results_queue = external_detection_queue or Queue()
+
+        # FIXME: rtsp 或 web_camera 資料型態不一致，需統一資料型態處理方法
+        video_source = self.video_config.rtsp if self.video_config.rtsp else self.video_config.web_camera
+        self.video_capture = video_capturer.VideoCapturer(video_source, self.video_queue)
+        self.video_capturer_thread = threading.Thread(target=self.video_capture.get_video)
+        self.video_capturer_thread.start()
+
+        config.logger.info(f"Started FaceApp in {mode.value} mode")
         config.logger.info(f"Blink detection enabled: {self.blink_detector.enabled}")
+
+    def stop(self):
+        self.running = False
+        if hasattr(self, "video_capturer_thread") and self.video_capturer_thread.is_alive():
+            self.video_capture.stop()
+            self.video_capturer_thread.join(timeout=2)
+
+        config.logger.info("FaceApp stopped")
 
     @staticmethod
     def _draw_rectangle(frame: np.ndarray, coordinate: list) -> None:
@@ -89,7 +140,6 @@ class FaceApp:
                 (255, 0, 0),
                 1,
             )
-        cv2.imshow("face_roi", face_roi)
 
     def _draw_result_information(
         self, frame: np.ndarray, detection_results: bool, blink_state: bool, detection_distance: int
@@ -102,14 +152,19 @@ class FaceApp:
             eyes_color = (0, 255, 0) if blink_state else (0, 0, 255)
             FaceApp._draw_text(frame, "Eyes detection:", (10, 70), (0, 0, 255))
             FaceApp._draw_text(frame, str(blink_state), (260, 70), eyes_color)
-            FaceApp._draw_text(frame, "Blink detection: ON", (400, 70), (0, 255, 0))
+            status_text = "ON" if self.mode == RunMode.STANDALONE else "ON (Stream)"
+            FaceApp._draw_text(frame, f"Blink: {status_text}", (400, 70), (0, 255, 0))
         else:
-            FaceApp._draw_text(frame, "Blink detection: OFF", (10, 70), (255, 0, 0))
+            FaceApp._draw_text(frame, "Blink: OFF", (10, 70), (255, 0, 0))
 
         FaceApp._draw_text(frame, "Face detection:", (10, 110), (0, 0, 255))
         FaceApp._draw_text(frame, str(detection_results), (260, 110), face_color)
-        FaceApp._draw_text(frame, "Detection distance:", (10, 150), (0, 0, 255))
-        FaceApp._draw_text(frame, str(detection_distance), (320, 150), face_color)
+        FaceApp._draw_text(frame, "Distance:", (10, 150), (0, 0, 255))
+        FaceApp._draw_text(frame, str(detection_distance), (150, 150), face_color)
+
+        # 顯示執行模式
+        # if self.mode == RunMode.FASTAPI:
+        #     FaceApp._draw_text(frame, "[FastAPI Mode]", (10, 190), (255, 165, 0))
 
     def _eyes_preprocessing(
         self, frame: np.ndarray, bounding_eye_left: list, bounding_eye_right: list, threshold_value: int
@@ -133,18 +188,75 @@ class FaceApp:
         return left_eye_gary, right_eye_gary
 
     def _fps_counter(self):
-        """FPS計數器"""
         if time.time() - self.start_time >= 1:
             self.fps = self.fps_count
             self.fps_count = 0
             self.start_time = time.time()
 
     def toggle_blink_detection(self):
-        """切換眨眼檢測開關"""
+        """Switch blink detection on/off. Use for standalone mode."""
         self.blink_detector.set_enabled(not self.blink_detector.enabled)
         config.logger.info(f"Blink detection toggled to: {self.blink_detector.enabled}")
 
+    # TAG: FastAPI mode methods
+    async def _put_frame_async(self, frame: np.ndarray):
+        """Put frame into queue (FastAPI mode)"""
+        if self.mode != RunMode.FASTAPI or not self.frame_queue:
+            return
+
+        try:
+            _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            frame_base64 = base64.b64encode(buffer).decode("utf-8")
+
+            if not self.frame_queue.full():
+                await self.frame_queue.put(frame_base64)
+        except Exception as e:
+            config.logger.error(f"Error putting frame to queue: {e}")
+
+    # TAG: FastAPI mode methods
+    async def _put_log_async(self, log_data: dict):
+        """Put log data into queue (FastAPI mode)"""
+        print(f"Putting log data to queue: {log_data}")
+        if self.mode != RunMode.FASTAPI or not self.log_queue:
+            return
+
+        try:
+            if not self.log_queue.full():
+                await self.log_queue.put(log_data)
+        except Exception as e:
+            config.logger.error(f"Error putting log to queue: {e}")
+
+    # TODO: FastAPI mode 中，需將影像儲存至 S3
+    def _save_face_image(self, face_roi: np.ndarray, success: bool, person_name: Optional[str] = None) -> str:
+        """Save face image to disk."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        status = "success" if success else "failed"
+
+        if self.mode == RunMode.FASTAPI:
+            base_dir = Path("captured_faces") / datetime.now().strftime("%Y%m%d")
+        else:
+            base_dir = Path("captured_faces")
+
+        base_dir.mkdir(parents=True, exist_ok=True)
+
+        if person_name:
+            filename = f"{timestamp}_{status}_{person_name}.jpg"
+        else:
+            filename = f"{timestamp}_{status}.jpg"
+
+        filepath = base_dir / filename
+        cv2.imwrite(str(filepath), face_roi)
+        config.logger.info(f"Saved face image: {filepath}")
+
+        return str(filepath)
+
     def run(self):
+        # If running in FastAPI mode, create an event loop
+        loop = None
+        if self.mode == RunMode.FASTAPI:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
         # fps parameters
         self.start_time = time.time()
 
@@ -153,21 +265,22 @@ class FaceApp:
         face_in_detection_range: bool = False
         enable_execution_interval: bool = False
         interval_count: int = 0
-        detection_results_queue = Queue()
         detection_results: bool = False
         detection_distance: int = 0
+        person_name: Optional[str] = None
 
         with self.mp_face_detection as face_detection:
-            while True:
+            while self.running:
                 try:
                     self.fps_count += 1
                     self._fps_counter()
 
                     if self.video_queue.empty():
-                        cv2.waitKey(1)
+                        cv2.waitKey(1) if self.mode == RunMode.STANDALONE else time.sleep(0.001)
+                        continue
 
-                    key = cv2.waitKey(1)
-
+                    # Handle key events
+                    key = cv2.waitKey(1) if self.mode == RunMode.STANDALONE else -1
                     # Press 'b' to toggle blink detection
                     if key == ord("b") or key == ord("B"):
                         self.toggle_blink_detection()
@@ -239,29 +352,28 @@ class FaceApp:
 
                                 blink_state = self.blink_detector.process_eyes(left_eye_gary, right_eye_gary)
 
-                                if self.sys_config.debug:
+                                if self.mode == RunMode.STANDALONE and self.sys_config.debug:
                                     cv2.imshow("eyes_left", left_eye_gary)
                                     cv2.imshow("eyes_right", right_eye_gary)
 
-                            # Face recognition
+                            # Face recognition trigger
                             trigger_recognition = False
-                            if self.sys_config.debug:
+                            if self.mode == RunMode.STANDALONE and self.sys_config.debug:
                                 # Debug: Press 'r' to trigger recognition
                                 trigger_recognition = key == ord("r") or key == ord("R")
                             else:
-                                # Productive: Use blink detection state to trigger recognition
+                                # Production: Use blink detection state
                                 if self.blink_detector.enabled:
                                     trigger_recognition = blink_state and not enable_execution_interval
                                 else:
-                                    # If blink detection is disabled, always trigger recognition
                                     trigger_recognition = not enable_execution_interval
 
                             if trigger_recognition:
-                                extraction = Thread(
+                                extraction = threading.Thread(
                                     target=self.predictor.face_prediction,
                                     args=(
                                         face_roi,
-                                        detection_results_queue,
+                                        self.detection_results_queue,
                                     ),
                                 )
                                 extraction.start()
@@ -275,7 +387,7 @@ class FaceApp:
                                     detection_results = False
                                     interval_count = 0
 
-                        # Face registration mode
+                        # standalone mode: save face features
                         if self.reco_config.set_mode and face_roi is not None:
                             if key == ord("s") or key == ord("S"):
                                 face_descriptor, feature_coordinates = self.predictor.feature_extraction(face_roi)
@@ -287,12 +399,34 @@ class FaceApp:
                         face_roi = None
 
                     # Handle detection results
-                    if not detection_results_queue.empty():
-                        detection_result = detection_results_queue.get()
+                    if not self.detection_results_queue.empty():
+                        detection_result = self.detection_results_queue.get()
                         detection_distance = round(detection_result[1], 2)
                         detection_results = detection_result[0]
+                        person_name = detection_result[2] if len(detection_result) > 2 else "Unknown"
 
-                    # Draw bounding box and text
+                        # FastAPI mode: save face image and put log
+                        if self.mode == RunMode.FASTAPI and frame is not None:
+                            if not self.sys_config.debug:
+                                image_path = self._save_face_image(frame, detection_results, person_name)
+
+                                log_data = {
+                                    "timestamp": datetime.utcnow().isoformat(),
+                                    "success": detection_results,
+                                    "face_detected": True,
+                                    "blink_detected": self.blink_detector.blink_state,
+                                    "detection_score": detection_score,
+                                    "distance": detection_distance,
+                                    "person_name": person_name,
+                                    "image_path": image_path,
+                                }
+                                print(f"Log data: {log_data}")
+
+                                # 傳送日誌
+                                if loop:
+                                    loop.run_until_complete(self._put_log_async(log_data))
+
+                    # Draw results
                     self._draw_result_information(
                         frame, detection_results, self.blink_detector.blink_state, detection_distance
                     )
@@ -300,21 +434,44 @@ class FaceApp:
                     if self.sys_config.debug:
                         FaceApp._draw_text(frame, "FPS: " + str(self.fps), (10, 30), (0, 0, 255))
 
-                    cv2.imshow("video_out", frame)
+                    # Handle frame display
+                    if self.mode == RunMode.STANDALONE:
+                        # Standalone mode: Show video window
+                        cv2.imshow("video_out", frame)
+                        if key == ord("q") or key == ord("Q"):
+                            break
+                    else:
+                        # FastAPI mode: put frame into queue
+                        if not self.sys_config.debug:
+                            # 每 3 幀發送一次以減少頻寬
+                            if self.fps_count % 3 == 0 and loop:
+                                loop.run_until_complete(self._put_frame_async(frame))
 
-                    if key == ord("q") or key == ord("Q"):
-                        self.signal_queue.put(1)
-                        break
+                    if self.mode == RunMode.STANDALONE and self.sys_config.debug:
+                        cv2.imshow("video_out", frame)
+                        debug_key = cv2.waitKey(1)
+                        if debug_key == ord("q") or debug_key == ord("Q"):
+                            break
+                        elif debug_key == ord("b") or debug_key == ord("B"):
+                            self.toggle_blink_detection()
 
                 except Exception:
                     traceback.print_exc()
-                    self.signal_queue.put(1)
-                    time.sleep(1)
-                    os.kill(os.getpid(), 9)
+                    if self.mode == RunMode.STANDALONE:
+                        time.sleep(1)
+                        break
+                    else:
+                        config.logger.error("Error in main loop, continuing...")
+                        time.sleep(0.1)
 
+        # 清理資源
         cv2.destroyAllWindows()
+        if loop:
+            print("Stopping event loop...")
+            loop.close()
+        self.stop()
 
 
 if __name__ == "__main__":
-    app = FaceApp()
+    app = FaceApp(mode=RunMode.STANDALONE)
     app.run()

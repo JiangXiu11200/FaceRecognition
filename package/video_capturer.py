@@ -1,4 +1,5 @@
-import os
+import threading
+import time
 import traceback
 from multiprocessing import Queue
 
@@ -6,10 +7,10 @@ import cv2
 
 
 class VideoCapturer:
-    def __init__(self, rtsp: str, video_queue: Queue, signal_queue: Queue):
+    def __init__(self, rtsp: str, video_queue: Queue):
         self.rtsp = rtsp
         self.video_queue = video_queue
-        self.signal_queue = signal_queue
+        self.stop_event = threading.Event()
 
     def get_video(self):
         """
@@ -18,7 +19,6 @@ class VideoCapturer:
         Parameters:
             rtsp (str): The RTSP URL.
             video_queue (Queue): The video queue.
-            signal_queue (Queue): Used to interrupt video capture.
 
         Returns:
             None
@@ -27,16 +27,27 @@ class VideoCapturer:
             Use video_queue.get() directly to get frames.
         """
         try:
-            cap = cv2.VideoCapture(self.rtsp, cv2.CAP_AVFOUNDATION)
-            ret, frame = cap.read()
-            while ret:
-                if not self.signal_queue.empty():
+            self.cap = cv2.VideoCapture(self.rtsp, cv2.CAP_AVFOUNDATION)
+            if not self.cap.isOpened():
+                print(f"Cannot open camera: {self.rtsp}")
+                return
+
+            while not self.stop_event.is_set():
+                ret, frame = self.cap.read()
+                if not ret:
+                    print("No frame received, breaking...")
                     break
-                ret, frame = cap.read()
                 frame = cv2.flip(frame, 1)
                 self.video_queue.put(frame)
-                cv2.waitKey(1)
+                time.sleep(0.001)
+
         except Exception:
             traceback.print_exc()
-        cap.release()
-        os._exit(0)
+        finally:
+            if self.cap:
+                self.cap.release()
+            print("VideoCapturer stopped.")
+
+    def stop(self):
+        """通知 thread 停止"""
+        self.stop_event.set()
