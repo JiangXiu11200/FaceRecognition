@@ -3,14 +3,25 @@ name = "facerecognition"
 version = "0.0.1"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.9,<3.10"
+requires-python = ">=3.10,<3.11"
+
 dependencies = [
+    "aiohttp>=3.12.15",
+    "alembic>=1.16.4",
     "dlib==19.22.0",
     "dynaconf==3.2.6",
+    "fastapi>=0.116.1",
+    "loguru>=0.7.3",
     "mediapipe==0.10.5",
     "numpy==1.26.4",
     "opencv-python>=4.10",
+    "pydantic-settings>=2.10.1",
+    "python-dotenv>=1.1.1",
     "ruff>=0.12.5",
+    "sqlalchemy>=2.0.43",
+    "typer>=0.16.1",
+    "uvicorn>=0.35.0",
+    "websockets>=15.0.1",
 ]
 
 [tool.ruff]
