@@ -6,12 +6,18 @@ import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket
+import cv2
+import numpy as np
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
+from sqlalchemy.orm import Session
 
 from app_server.connection_manager import ConnectionManager
-from app_server.db.database import Base, engine
+from app_server.db.database import Base, engine, get_db
+from app_server.db.models import FaceRecognitionConfig, SystemConfig
+from app_server.db.schemas import FaceRecognitionConfigBase, SystemConfigBase
+from package.face_feature_extractor import FaceFeatureExtractor
 
 
 @asynccontextmanager
@@ -73,3 +79,115 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"Error in WebSocket connection: {e}")
         await manager.disconnect(websocket)
+
+
+@app.get("/api/health")
+async def health_check():
+    """Check connection and service status."""
+    return {
+        "status": "ok",
+        "face_detection_running": manager.face_app_manager is not None,
+        "active_connections": len(manager.active_connections),
+    }
+
+
+@app.get("/api/face-reco-config")
+async def read_config(db: Session = Depends(get_db)):
+    """Read face recognition configuration."""
+    config = db.query(FaceRecognitionConfig).first()
+    if config:
+        return config
+    else:
+        raise HTTPException(status_code=404, detail="Face recognition configuration not found")
+
+
+@app.post("/api/face-reco-config")
+async def update_config(face_reco_config: FaceRecognitionConfigBase, db: Session = Depends(get_db)):
+    """Update or create face recognition configuration."""
+    db_config = db.query(FaceRecognitionConfig).first()
+    if db_config:
+        for key, value in face_reco_config.dict().items():
+            setattr(db_config, key, value)
+    else:
+        db_config = FaceRecognitionConfig(**face_reco_config.dict())
+        db.add(db_config)
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+
+@app.get("/api/debug")
+async def debug_info(system_config: Session = Depends(get_db)):
+    """Get face recognition service debug mode settings."""
+    system_config = system_config.query(SystemConfig).first()
+    if system_config:
+        return system_config
+    else:
+        raise HTTPException(status_code=404, detail="System configuration not found")
+
+
+@app.post("/api/debug")
+async def update_debug_info(system_config: SystemConfigBase, db: Session = Depends(get_db)):
+    """Update face recognition service debug mode settings."""
+    db_config = db.query(SystemConfig).first()
+    if db_config:
+        for key, value in system_config.dict().items():
+            setattr(db_config, key, value)
+    else:
+        db_config = SystemConfig(**system_config.dict())
+        db.add(db_config)
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+
+@app.post("/api/register-face")
+async def register_face(face_image: UploadFile = File(...), name: str = Form(...), db: Session = Depends(get_db)):
+    """
+    Register a new face with the provided image and name.
+    """
+    config = db.query(FaceRecognitionConfig).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="Face recognition configuration not found")
+    try:
+        face_image_bytes = await face_image.read()
+        face_feature_extractor = FaceFeatureExtractor(
+            feature_csv_path=config.face_model,
+            dlib_predictor_path=config.dlib_predictor_path,
+            dlib_recognition_model_path=config.dlib_recognition_model_path,
+            user_name=name,
+        )
+        face_image_nparry = cv2.imdecode(np.frombuffer(face_image_bytes, np.uint8), cv2.IMREAD_COLOR)
+        convert_status, message = face_feature_extractor.get_face_roi(face_image_nparry)
+        if not convert_status:
+            raise HTTPException(status_code=503, detail=message.get("error"))
+        face_roi = message.get("face_roi")
+        feature_extraction_status, message = face_feature_extractor.feature_extraction(face_roi)
+        if not feature_extraction_status:
+            raise HTTPException(status_code=503, detail=message.get("error"))
+
+        return Response(
+            status_code=201, content=json.dumps({"status": "success", "message": f"Face registered for {name}"})
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": str(e)})
+
+
+@app.post("/api/delete-registered-face/{user_name}")
+async def delete_registered_face(user_name: str, db: Session = Depends(get_db)):
+    """
+    Delete a registered face by name.
+    """
+    config = db.query(FaceRecognitionConfig).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="Face recognition configuration not found")
+
+    delete_status, message = FaceFeatureExtractor.delete_feature(config.face_model, user_name)
+
+    if delete_status:
+        return Response(
+            status_code=200,
+            content=json.dumps(message),
+        )
+    else:
+        raise HTTPException(status_code=404, detail=message)
