@@ -1,8 +1,8 @@
 import asyncio
 import base64
+import hashlib
 import threading
 import time
-import traceback
 from datetime import datetime
 from enum import Enum
 from multiprocessing import Queue
@@ -110,6 +110,8 @@ class FaceApp:
 
     def stop(self):
         self.running = False
+        self.video_queue.close()
+        self.video_queue.join_thread()
         if hasattr(self, "video_capturer_thread") and self.video_capturer_thread.is_alive():
             self.video_capture.stop()
             self.video_capturer_thread.join(timeout=2)
@@ -391,7 +393,8 @@ class FaceApp:
                         if self.reco_config.set_mode and face_roi is not None:
                             if key == ord("s") or key == ord("S"):
                                 face_descriptor, feature_coordinates = self.predictor.feature_extraction(face_roi)
-                                predictor.Predictor.save_feature(self.reco_config.face_model, face_descriptor)
+                                name = "User_" + hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
+                                predictor.Predictor.save_feature(self.reco_config.face_model, face_descriptor, name)
                                 if self.sys_config.debug:
                                     FaceApp._draw_dlib_features(face_roi, feature_coordinates)
                     else:
@@ -455,8 +458,8 @@ class FaceApp:
                         elif debug_key == ord("b") or debug_key == ord("B"):
                             self.toggle_blink_detection()
 
-                except Exception:
-                    traceback.print_exc()
+                except Exception as e:
+                    config.logger.debug(f"Error in main loop: {e}")
                     if self.mode == RunMode.STANDALONE:
                         time.sleep(1)
                         break

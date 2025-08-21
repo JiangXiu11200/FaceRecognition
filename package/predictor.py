@@ -25,24 +25,30 @@ class Predictor:
         self.sensitivity = sensitivity
 
     @staticmethod
-    def save_feature(out_put_path: str, face_descriptor: np.ndarray) -> bool:
+    def save_feature(out_put_path: str, face_descriptor: np.ndarray, user_name: str = "User") -> bool:
         """
-        Save face descriptor.
+        Save face descriptor to CSV file. \n
+        CSV format: name,f1,f2,...,f128
 
         Parameters:
             out_put_path (str): The output path.
             face_descriptor (np.ndarray): The face descriptor.
+            user_name (str): The name of the user.
 
         Returns:
             result (bool): Save status.
         """
         try:
+            if isinstance(face_descriptor, np.ndarray):
+                face_descriptor = face_descriptor.tolist()
             with open(out_put_path, mode="a+", newline="") as file:
                 writer = csv.writer(file)
-                writer.writerow(face_descriptor)
+                writer.writerow([user_name] + face_descriptor)
+            config.logger.info(f"Feature saved successfully for {user_name}.")
             return True
         except Exception as err:
-            print("Save feature save_feature mode error: ", err)
+            config.logger.error(f"Unable to save feature for {user_name}. Error: {err}")
+            config.logger.debug(traceback.print_exc())
             return False
 
     def face_prediction(self, face_roi: np.ndarray, detection_results: Queue) -> bool:
@@ -59,7 +65,7 @@ class Predictor:
             start_time = time.time()
             result = False
             current_face_descriptor, _ = self.feature_extraction(face_roi)
-            distance = self.euclidean_distance(current_face_descriptor)
+            distance, name = self.euclidean_distance(current_face_descriptor)
             if distance <= self.sensitivity:
                 config.logger.info("pass.")
                 detection_results.put([True, distance])
@@ -116,16 +122,21 @@ class Predictor:
             result (float): The Euclidean distance.
         """
         try:
-            dist_list = []
             if len(self.registered_face_descriptor) == 0:
                 config.logger.error("Model data is empty.")
-                return 999
-            for original_features in self.registered_face_descriptor:
-                dist = np.sqrt(np.sum(np.square(current_face_descriptor - original_features)))
-                dist_list.append(dist)
-            result = min(dist_list)
-            config.logger.debug(f"Minimum euclidean distance: {result}")
-            return result
+                return 999, "Unknown"
+
+            min_dist = float("inf")
+            matched_name = None
+
+            for name, features in self.registered_face_descriptor.items():
+                dist = np.linalg.norm(current_face_descriptor - features)
+                if dist < min_dist:
+                    min_dist = dist
+                    matched_name = name
+
+            config.logger.debug(f"Minimum distance: {min_dist}, matched: {matched_name}")
+            return min_dist, matched_name
         except Exception as err:
             print("euclidean_distance error: ", err)
             config.logger.debug(traceback.print_exc())

@@ -54,16 +54,24 @@ class RecoConfigData:
         self.load_face_features()  # FIXME: 將 face features 改成 key-value db
 
     def load_face_features(self):
-        face_features = []
+        """
+        Load registered face features from CSV.
+        CSV format: name, f1, f2, ..., f128
+        """
+        self.registered_face_descriptor = {}
+
         if os.path.isfile(self.face_model):
-            with open(self.face_model) as model:
+            with open(self.face_model, newline="") as model:
                 rows = csv.reader(model)
                 for row in rows:
-                    face_features.append(np.array(row, dtype=float))
+                    if len(row) < 129:
+                        continue
+                    name = row[0]
+                    features = np.array(row[1:], dtype=float)
+                    self.registered_face_descriptor[name] = features
         else:
             # Create the directory if it does not exist
             directory_path = os.path.dirname(self.face_model)
             os.makedirs(directory_path, exist_ok=True)
-            with open(self.face_model, mode="a"):
+            with open(self.face_model, mode="a", newline="") as model:
                 pass
-        self.registered_face_descriptor = np.array(face_features)
