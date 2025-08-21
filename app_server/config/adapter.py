@@ -1,5 +1,5 @@
-from ..database import SessionLocal
-from ..models import FaceRecognitionConfig, SystemConfig, VideoConfig
+from ..db.database import SessionLocal
+from ..db.models import FaceRecognitionConfig, SystemConfig, VideoConfig
 from .schema import RecoConfigData, SystemConfigData, VideoConfigData
 
 

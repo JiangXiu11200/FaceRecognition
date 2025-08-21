@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
 
 from app_server.connection_manager import ConnectionManager
-from app_server.database import Base, engine
+from app_server.db.database import Base, engine
 
 
 @asynccontextmanager

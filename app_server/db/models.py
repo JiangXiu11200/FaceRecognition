@@ -6,7 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String
 
-from app_server.database import Base
+from .database import Base
 
 
 class SystemConfig(Base):
@@ -60,3 +60,31 @@ class FaceRecognitionConfig(Base):
     eyes_detection_brightness_value_max = Column(Integer, default=0)
     sensitivity = Column(Float, default=0.5)
     consecutive_prediction_intervals_frame = Column(Integer, default=90)
+
+
+# class DetectionLog(Base):
+#     __tablename__ = "detection_log"
+
+#     id = Column(Integer, primary_key=True, index=True)
+#     timestamp = Column(DateTime, default=datetime.utcnow)
+#     success = Column(Boolean)
+#     face_detected = Column(Boolean)
+#     blink_detected = Column(Boolean)
+#     detection_score = Column(Float)
+#     distance = Column(Float)
+#     person_name = Column(String, nullable=True)
+#     image_path = Column(String, nullable=True)
+#     uploaded_to_s3 = Column(Boolean, default=False)
+#     s3_url = Column(String, nullable=True)
+#     created_at = Column(DateTime, default=datetime.utcnow)
+
+"""
+    "timestamp": datetime.utcnow().isoformat(),
+    "success": detection_results,
+    "face_detected": True,
+    "blink_detected": self.blink_detector.blink_state,
+    "detection_score": detection_score,
+    "distance": detection_distance,
+    "person_name": person_name,
+    "image_path": image_path,
+"""

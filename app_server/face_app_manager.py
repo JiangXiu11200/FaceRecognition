@@ -6,8 +6,8 @@ from queue import Queue
 from face_detection import RunMode
 
 from .config.adapter import ConfigAdapter
-from .database import SessionLocal
-from .models import SystemLogs
+from .db.database import SessionLocal
+from .db.models import SystemLogs
 from .utils import post_log_to_server
 
 
