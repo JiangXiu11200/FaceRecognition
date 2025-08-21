@@ -98,7 +98,8 @@ The system directory contains a settings.json configuration file.
 ```json=
 {
   "video_config": {
-    "rtsp": "<RTSP URL (str) or Web Camera (int)>",
+    "rtsp": "<RTSP URL (str), If using web camera set null>",
+    "web_camera": "<Web Camera ID (int), If using RTSP set null>",
     "image_height": "<Image height (int)>",
     "image_width": "<Image width (int)>",
     "detection_range_start_point": [
@@ -166,7 +167,8 @@ Place the dlib model in the /models/dlib/ directory and use the Web Camera on yo
 ```json=
 {
   "video_config": {
-    "rtsp": 0,
+    "rtsp": null,
+    "web_camera": 0,
     "image_height": 720,
     "image_width": 1280,
     "detection_range_start_point": [

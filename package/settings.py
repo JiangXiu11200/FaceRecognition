@@ -11,8 +11,16 @@ import package.config as config
 
 @dataclass
 class VideoConfig:
-    __solts__ = ["rtsp", "image_height", "image_width", "detection_range_start_point", "detection_range_end_point"]
-    rtsp: str
+    __solts__ = [
+        "rtsp",
+        "web_camera",
+        "image_height",
+        "image_width",
+        "detection_range_start_point",
+        "detection_range_end_point",
+    ]
+    rtsp: str | None
+    web_camera: int | None
     image_height: int
     image_width: int
     detection_range_start_point: list
