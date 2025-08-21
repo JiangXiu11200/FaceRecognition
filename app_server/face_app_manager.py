@@ -8,7 +8,7 @@ from face_detection import RunMode
 from .config.adapter import ConfigAdapter
 from .db.database import SessionLocal
 from .db.models import SystemLogs
-from .utils import post_log_to_server
+from .utils.external_service import post_log_to_server
 
 
 class FaceAppManager:
@@ -57,7 +57,7 @@ class FaceAppManager:
         face_thread.start()
 
         # Start async tasks for streaming and logging
-        await asyncio.gather(self._stream_frames(), self._process_logs(), return_exceptions=True)
+        await asyncio.gather(self._stream_frames(), self._detection_log_handler(), return_exceptions=True)
 
     async def stop(self):
         """Stop face detection"""
@@ -82,7 +82,7 @@ class FaceAppManager:
                 print(f"Error streaming frame: {e}")
                 await asyncio.sleep(0.01)
 
-    async def _process_logs(self):
+    async def _detection_log_handler(self):
         """Process detection logs"""
         while self.running:
             try:
