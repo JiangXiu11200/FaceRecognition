@@ -68,11 +68,11 @@ class Predictor:
             distance, name = self.euclidean_distance(current_face_descriptor)
             if distance <= self.sensitivity:
                 config.logger.info("pass.")
-                detection_results.put([True, distance])
+                detection_results.put([True, distance, name])
                 result = True
             else:
                 config.logger.info("fail.")
-                detection_results.put([False, distance])
+                detection_results.put([False, distance, "Unknown"])
                 result = False
             end_time = time.time()
             execution_time = round(end_time - start_time, 3)
@@ -111,7 +111,7 @@ class Predictor:
             config.logger.debug(traceback.print_exc())
             return None, None
 
-    def euclidean_distance(self, current_face_descriptor: np.ndarray) -> float:
+    def euclidean_distance(self, current_face_descriptor: np.ndarray) -> tuple[Optional[float], Optional[str]]:
         """
         Calculate the Euclidean distance between the current face descriptor and the loaded model.
 
@@ -119,7 +119,8 @@ class Predictor:
             current_face_descriptor (np.ndarray): The current face descriptor.
 
         Returns:
-            result (float): The Euclidean distance.
+            min_dist (float): The minimum distance found.
+            matched_name (str): The name of the matched face.
         """
         try:
             if len(self.registered_face_descriptor) == 0:

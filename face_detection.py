@@ -165,8 +165,8 @@ class FaceApp:
         FaceApp._draw_text(frame, str(detection_distance), (150, 150), face_color)
 
         # 顯示執行模式
-        # if self.mode == RunMode.FASTAPI:
-        #     FaceApp._draw_text(frame, "[FastAPI Mode]", (10, 190), (255, 165, 0))
+        if self.mode == RunMode.FASTAPI:
+            FaceApp._draw_text(frame, "[FastAPI Mode]", (10, 30), (255, 165, 0))
 
     def _eyes_preprocessing(
         self, frame: np.ndarray, bounding_eye_left: list, bounding_eye_right: list, threshold_value: int
@@ -411,19 +411,14 @@ class FaceApp:
                         # FastAPI mode: save face image and put log
                         if self.mode == RunMode.FASTAPI and frame is not None:
                             if not self.sys_config.debug:
-                                image_path = self._save_face_image(frame, detection_results, person_name)
+                                self._save_face_image(frame, detection_results, person_name)
 
                                 log_data = {
-                                    "timestamp": datetime.utcnow().isoformat(),
-                                    "success": detection_results,
-                                    "face_detected": True,
-                                    "blink_detected": self.blink_detector.blink_state,
-                                    "detection_score": detection_score,
-                                    "distance": detection_distance,
+                                    "timestamp": datetime.now().isoformat(),
+                                    "detection_results": detection_results,
                                     "person_name": person_name,
-                                    "image_path": image_path,
+                                    "blink_detected": self.blink_detector.blink_state,
                                 }
-                                print(f"Log data: {log_data}")
 
                                 # 傳送日誌
                                 if loop:
