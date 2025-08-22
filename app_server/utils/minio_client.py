@@ -96,7 +96,7 @@ class MinioClient:
 
     @classmethod
     def upload_object(
-        cls, bucket_name: str, absolute_path_or_binary: str, s3_object_key: str, is_binary: bool = False
+        cls, bucket_name: str, absolute_path_or_binary: str | bytes, s3_object_key: str, is_binary: bool = False
     ) -> tuple[bool, dict]:
         """
         If `is_content` is True, pass the binary content of the file.
@@ -106,7 +106,6 @@ class MinioClient:
             if is_binary:
                 try:
                     mime_type = mimetypes.guess_type(s3_object_key)[0]
-                    print("--> ", mime_type)
                     if mime_type is None:
                         mime_type = "application/octet-stream"
                     file_size = len(absolute_path_or_binary)

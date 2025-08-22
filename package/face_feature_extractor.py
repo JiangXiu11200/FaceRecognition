@@ -79,14 +79,14 @@ class FaceFeatureExtractor:
             current_face_descriptor = np.array(
                 self.dlib_recognition_model.compute_face_descriptor(face_roi, feature_coordinates)
             )
-            save_status, message = self._save_feature(current_face_descriptor)
+            # save_status, message = self._save_feature(current_face_descriptor)
 
-            return save_status, message
+            return True, {"face_descriptor": current_face_descriptor}
         except Exception as err:
             print(traceback.format_exc())
             return False, {"error": f"Unable to extract features. Error: {err}"}
 
-    def _save_feature(self, face_descriptor: np.ndarray) -> bool:
+    def save_feature(self, face_descriptor: np.ndarray) -> bool:
         """
         Save face descriptor to CSV file. \n
         CSV format: name,f1,f2,...,f128

@@ -7,10 +7,8 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-import cv2
-import numpy as np
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, WebSocket
+from fastapi import Depends, FastAPI, Form, HTTPException, Response, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -19,6 +17,7 @@ from app_server.connection_manager import ConnectionManager
 from app_server.db.database import Base, engine, get_db
 from app_server.db.models import FaceRecognitionConfig, SystemConfig
 from app_server.db.schemas import FaceRecognitionConfigBase, SystemConfigBase
+from app_server.utils.image_tools import base64_to_bgr
 from app_server.utils.minio_client import MinioClient
 from package.face_feature_extractor import FaceFeatureExtractor
 
@@ -149,7 +148,7 @@ async def update_debug_info(system_config: SystemConfigBase, db: Session = Depen
 
 
 @app.post("/api/register-face")
-async def register_face(face_image: UploadFile = File(...), name: str = Form(...), db: Session = Depends(get_db)):
+async def register_face(base64_face_image: str = Form(...), name: str = Form(...), db: Session = Depends(get_db)):
     """
     Register a new face with the provided image and name.
     """
@@ -157,15 +156,13 @@ async def register_face(face_image: UploadFile = File(...), name: str = Form(...
     if not config:
         raise HTTPException(status_code=404, detail="Face recognition configuration not found")
     try:
-        face_image_bytes = await face_image.read()
         face_feature_extractor = FaceFeatureExtractor(
             feature_csv_path=config.face_model,
             dlib_predictor_path=config.dlib_predictor_path,
             dlib_recognition_model_path=config.dlib_recognition_model_path,
             user_name=name,
         )
-
-        face_image_nparry = cv2.imdecode(np.frombuffer(face_image_bytes, np.uint8), cv2.IMREAD_COLOR)
+        image_bytes, face_image_nparry = base64_to_bgr(base64_face_image)
         convert_status, message = face_feature_extractor.get_face_roi(face_image_nparry)
         if not convert_status:
             raise HTTPException(status_code=503, detail=message.get("error"))
@@ -183,7 +180,7 @@ async def register_face(face_image: UploadFile = File(...), name: str = Form(...
             try:
                 upload_status, message = MinioClient.upload_object(
                     bucket_name="user-registration",
-                    absolute_path_or_binary=face_image_bytes,
+                    absolute_path_or_binary=image_bytes,
                     s3_object_key=object_name,
                     is_binary=True,
                 )
