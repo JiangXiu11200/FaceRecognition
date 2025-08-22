@@ -42,7 +42,7 @@ class ConfigAdapter:
             if reco_config:
                 self.reco_config = RecoConfigData(
                     enable=reco_config.enable,
-                    set_mode=reco_config.set_mode,  # FIXME: FastAPI 會報錯
+                    set_mode=False,  # set_mode only used in standalone mode.
                     enable_blink_detection=reco_config.enable_blink_detection,
                     dlib_predictor=reco_config.dlib_predictor_path,
                     dlib_recognition_model=reco_config.dlib_recognition_model_path,
