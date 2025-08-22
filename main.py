@@ -3,11 +3,13 @@ Building a face recognition application as a microservice using FastAPI.
 """
 
 import json
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import cv2
 import numpy as np
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
@@ -17,7 +19,12 @@ from app_server.connection_manager import ConnectionManager
 from app_server.db.database import Base, engine, get_db
 from app_server.db.models import FaceRecognitionConfig, SystemConfig
 from app_server.db.schemas import FaceRecognitionConfigBase, SystemConfigBase
+from app_server.utils.minio_client import MinioClient
 from package.face_feature_extractor import FaceFeatureExtractor
+
+load_dotenv()
+
+UPLOAD_TO_S3 = os.getenv("UPLOAD_TO_S3", "False").lower() == "true"
 
 
 @asynccontextmanager
@@ -157,6 +164,7 @@ async def register_face(face_image: UploadFile = File(...), name: str = Form(...
             dlib_recognition_model_path=config.dlib_recognition_model_path,
             user_name=name,
         )
+
         face_image_nparry = cv2.imdecode(np.frombuffer(face_image_bytes, np.uint8), cv2.IMREAD_COLOR)
         convert_status, message = face_feature_extractor.get_face_roi(face_image_nparry)
         if not convert_status:
@@ -165,9 +173,37 @@ async def register_face(face_image: UploadFile = File(...), name: str = Form(...
         feature_extraction_status, message = face_feature_extractor.feature_extraction(face_roi)
         if not feature_extraction_status:
             raise HTTPException(status_code=503, detail=message.get("error"))
+        saved_status, message = face_feature_extractor.save_feature(message.get("face_descriptor"))
+        if not saved_status:
+            raise HTTPException(status_code=503, detail=message.get("error"))
+
+        object_name = None
+        if UPLOAD_TO_S3:
+            object_name = f"{name}_register_face.jpg"
+            try:
+                upload_status, message = MinioClient.upload_object(
+                    bucket_name="user-registration",
+                    absolute_path_or_binary=face_image_bytes,
+                    s3_object_key=object_name,
+                    is_binary=True,
+                )
+            except Exception as e:
+                print(f"Error uploading to MinIO S3: {e}")
+                raise HTTPException(status_code=503, detail={"error": str(e)})
+            if not upload_status:
+                face_feature_extractor.delete_feature(config.face_model, name)
+                raise HTTPException(status_code=503, detail=message.get("error"))
 
         return Response(
-            status_code=201, content=json.dumps({"status": "success", "message": f"Face registered for {name}"})
+            status_code=201,
+            content=json.dumps(
+                {
+                    "status": "success",
+                    "s3_object_key": object_name,
+                    "registr_name": name,
+                    "message": f"Face registered for {name}",
+                }
+            ),
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e)})
@@ -183,6 +219,8 @@ async def delete_registered_face(user_name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Face recognition configuration not found")
 
     delete_status, message = FaceFeatureExtractor.delete_feature(config.face_model, user_name)
+
+    MinioClient.delete_directory(bucket_name="user-registration", directory_name=user_name)
 
     if delete_status:
         return Response(
