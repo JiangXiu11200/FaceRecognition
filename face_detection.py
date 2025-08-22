@@ -47,6 +47,7 @@ class FaceApp:
         self.frame_queue = frame_queue
         self.log_queue = log_queue
         self.running = True
+        self._minio_client = None
 
         # Initialize config adapter
         if mode == RunMode.STANDALONE or config_source is None:
@@ -107,6 +108,14 @@ class FaceApp:
 
         config.logger.info(f"Started FaceApp in {mode.value} mode")
         config.logger.info(f"Blink detection enabled: {self.blink_detector.enabled}")
+
+    @property
+    def minio_client(self):
+        if self._minio_client is None:
+            from app_server.utils.minio_client import MinioClient
+
+            self._minio_client = MinioClient
+        return self._minio_client
 
     def stop(self):
         self.running = False
@@ -218,7 +227,6 @@ class FaceApp:
     # TAG: FastAPI mode methods
     async def _put_log_async(self, log_data: dict):
         """Put log data into queue (FastAPI mode)"""
-        print(f"Putting log data to queue: {log_data}")
         if self.mode != RunMode.FASTAPI or not self.log_queue:
             return
 
@@ -228,7 +236,6 @@ class FaceApp:
         except Exception as e:
             config.logger.error(f"Error putting log to queue: {e}")
 
-    # TODO: FastAPI mode 中，需將影像儲存至 S3
     def _save_face_image(self, face_roi: np.ndarray, success: bool, person_name: Optional[str] = None) -> str:
         """Save face image to disk."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -251,6 +258,25 @@ class FaceApp:
         config.logger.info(f"Saved face image: {filepath}")
 
         return str(filepath)
+
+    def _upload_face_image_to_s3(self, face_roi: np.ndarray, detection_results: bool, s3_object_key: str) -> bool:
+        """Upload face image to S3."""
+        frame_bytes = cv2.imencode(".jpg", face_roi)[1].tobytes()
+        upload_status = False
+
+        try:
+            upload_status, message = self.minio_client.upload_object(
+                bucket_name="face-activity-logs" if detection_results else "face-alarm-logs",
+                absolute_path_or_binary=frame_bytes,
+                s3_object_key=s3_object_key,
+                is_binary=True,
+            )
+        except Exception as e:
+            config.logger.error(f"Error uploading to MinIO S3: {e}")
+            return False
+        config.logger.info(f"Upload status: {upload_status}")
+
+        return upload_status
 
     def run(self):
         # If running in FastAPI mode, create an event loop
@@ -411,16 +437,21 @@ class FaceApp:
                         # FastAPI mode: save face image and put log
                         if self.mode == RunMode.FASTAPI and frame is not None:
                             if not self.sys_config.debug:
-                                self._save_face_image(frame, detection_results, person_name)
+                                # self._save_face_image(frame, detection_results, person_name)
+                                s3_object_key = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{person_name}.jpg"
+                                upload_status = self._upload_face_image_to_s3(
+                                    face_roi, detection_results, s3_object_key
+                                )
 
                                 log_data = {
-                                    "timestamp": datetime.now().isoformat(),
+                                    "name": person_name,
+                                    "group": "Unknown",
+                                    "s3_object_key": s3_object_key if upload_status else None,
                                     "detection_results": detection_results,
-                                    "person_name": person_name,
-                                    "blink_detected": self.blink_detector.blink_state,
+                                    "timestamp": datetime.now().isoformat(),
                                 }
 
-                                # 傳送日誌
+                                # Send log data
                                 if loop:
                                     loop.run_until_complete(self._put_log_async(log_data))
 

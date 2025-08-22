@@ -137,7 +137,7 @@ class MinioClient:
                 except FileNotFoundError:
                     return False, {"status": False, "error": f"File '{absolute_path_or_binary}' not found."}
 
-            return True, {"status": True, "object_name": s3_object_key, "bucket_name": bucket_name}
+            return True, {"status": True, "s3_object_key": s3_object_key, "bucket_name": bucket_name}
         except error.S3Error as e:
             return False, {"status": False, "error": str(e)}
 
