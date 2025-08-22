@@ -79,6 +79,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 await manager.stop_face_detection()
             elif message.get("type") == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
+            elif message.get("type") == "start_video_stream":
+                print("⚠️ Starting video stream...")
+                await manager.start_video_stream()
+            elif message.get("type") == "stop_video_stream":
+                print("⚠️ Stopping video stream...")
+                await manager.stop_video_stream()
 
     except WebSocketDisconnect:
         await manager.disconnect(websocket)

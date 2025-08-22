@@ -4,6 +4,7 @@ from typing import Optional, Set
 from fastapi import WebSocket
 
 from .face_app_manager import FaceAppManager
+from .face_registration_manager import FaceRegistrationManager
 
 
 class ConnectionManager:
@@ -17,13 +18,11 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.add(websocket)
-
-        # Start face detection service when first client connects
-        # if len(self.active_connections) == 1:
-        #     await self.start_face_detection()
+        print(f"New client connected: {websocket.client}")
 
     async def disconnect(self, websocket: WebSocket):
         self.active_connections.discard(websocket)
+        print(f"Client disconnected: {websocket.client}")
 
         # Stop face detection service when no clients connected
         if len(self.active_connections) == 0:
@@ -58,6 +57,7 @@ class ConnectionManager:
         disconnected_clients = set()
         for connection in self.active_connections:
             try:
+                print(f"Sending message to client {connection.client}: {message}")
                 await connection.send_json(message)
             except Exception as e:
                 print(f"Error sending message to client: {e}")
@@ -68,6 +68,7 @@ class ConnectionManager:
     async def start_face_detection(self):
         """Start face detection service"""
         if self.face_app_manager is None:
+            print("Starting face detection service...")
             self.face_app_manager = FaceAppManager(self)
             self.stream_task = asyncio.create_task(self.face_app_manager.run())
             await self.broadcast_message({"type": "status", "message": "Face detection service started"})
@@ -75,6 +76,7 @@ class ConnectionManager:
     async def stop_face_detection(self):
         """Stop face detection service"""
         if self.face_app_manager:
+            print("Stopping face detection service...")
             await self.face_app_manager.stop()
             if self.stream_task:
                 self.stream_task.cancel()
@@ -85,3 +87,26 @@ class ConnectionManager:
             self.face_app_manager = None
             self.stream_task = None
             await self.broadcast_message({"type": "status", "message": "Face detection service stopped"})
+
+    async def start_video_stream(self):
+        """Start video stream service"""
+        if self.face_app_manager is None:
+            print("Starting video stream service...")
+            self.face_app_manager = FaceRegistrationManager(self)
+            self.stream_task = asyncio.create_task(self.face_app_manager.run())
+            await self.broadcast_message({"type": "status", "message": "Video stream service started"})
+
+    async def stop_video_stream(self):
+        """Stop video stream service"""
+        if self.face_app_manager:
+            print("Stopping video stream service...")
+            await self.face_app_manager.stop()
+            if self.stream_task:
+                self.stream_task.cancel()
+                try:
+                    await self.stream_task
+                except asyncio.CancelledError:
+                    pass
+            self.face_app_manager = None
+            self.stream_task = None
+            await self.broadcast_message({"type": "status", "message": "Video stream service stopped"})
