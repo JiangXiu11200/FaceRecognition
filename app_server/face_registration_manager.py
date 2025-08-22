@@ -2,7 +2,6 @@ import asyncio
 import threading
 
 from .config.adapter import ConfigAdapter
-from .utils.external_service import post_log_to_server
 
 
 class FaceRegistrationManager:
@@ -32,14 +31,13 @@ class FaceRegistrationManager:
         self.video_stream = VideoStream(
             config_source=self.config_adapter,
             frame_queue=self.frame_queue,
-            log_queue=self.log_queue,
         )
 
         face_thread = threading.Thread(target=self.video_stream.run)
         face_thread.daemon = True
         face_thread.start()
 
-        await asyncio.gather(self._stream_frames(), self._log_handler(), return_exceptions=True)
+        await asyncio.gather(self._stream_frames(), return_exceptions=True)
 
     async def stop(self):
         """Stop face detection"""
@@ -59,20 +57,4 @@ class FaceRegistrationManager:
                 continue
             except Exception as e:
                 print(f"Error streaming frame: {e}")
-                await asyncio.sleep(0.01)
-
-    async def _log_handler(self):
-        """Process detection logs"""
-        while self.running:
-            try:
-                log_data = await asyncio.wait_for(self.log_queue.get(), timeout=0.1)
-                await self.connection_manager.send_log(log_data)
-
-                if not self.config_adapter.system_config.debug:
-                    asyncio.create_task(post_log_to_server(log_data))
-
-            except asyncio.TimeoutError:
-                continue
-            except Exception as e:
-                print(f"Error processing log: {e}")
                 await asyncio.sleep(0.01)

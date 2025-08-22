@@ -17,12 +17,8 @@ import package.video_capturer as video_capturer
 
 
 class VideoStream:
-    def __init__(
-        self, config_source: Optional[Any] = None, frame_queue: Optional[Any] = None, log_queue: Optional[Any] = None
-    ):
+    def __init__(self, config_source: Optional[Any] = None, frame_queue: Optional[Any] = None):
         self.frame_queue = frame_queue
-        self.log_queue = log_queue
-
         self.video_config = config_source.video_config
 
         self.fps = 0
