@@ -15,10 +15,11 @@ from sqlalchemy.orm import Session
 
 from app_server.connection_manager import ConnectionManager
 from app_server.db.database import Base, engine, get_db
-from app_server.db.models import FaceRecognitionConfig, SystemConfig
-from app_server.db.schemas import FaceRecognitionConfigBase, SystemConfigBase
+from app_server.db.models import FaceRecognitionConfig, SystemConfig, VideoConfig
+from app_server.db.schemas import FaceRecognitionConfigBase, SystemConfigBase, VideoConfigBase
 from app_server.utils.image_tools import base64_to_bgr
 from app_server.utils.minio_client import MinioClient
+from app_server.utils.preview_camera import capture_image_from_camera
 from package.face_feature_extractor import FaceFeatureExtractor
 
 load_dotenv()
@@ -104,7 +105,7 @@ async def health_check():
 
 
 @app.get("/api/face-reco-config")
-async def read_config(db: Session = Depends(get_db)):
+async def read_face_reco_config(db: Session = Depends(get_db)):
     """Read face recognition configuration."""
     config = db.query(FaceRecognitionConfig).first()
     if config:
@@ -114,7 +115,7 @@ async def read_config(db: Session = Depends(get_db)):
 
 
 @app.post("/api/face-reco-config")
-async def update_config(face_reco_config: FaceRecognitionConfigBase, db: Session = Depends(get_db)):
+async def update_face_reco_config(face_reco_config: FaceRecognitionConfigBase, db: Session = Depends(get_db)):
     """Update or create face recognition configuration."""
     db_config = db.query(FaceRecognitionConfig).first()
     if db_config:
@@ -147,6 +148,31 @@ async def update_debug_info(system_config: SystemConfigBase, db: Session = Depen
             setattr(db_config, key, value)
     else:
         db_config = SystemConfig(**system_config.dict())
+        db.add(db_config)
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+
+@app.get("/api/video-config")
+async def read_video_config(db: Session = Depends(get_db)):
+    """Read face recognition configuration."""
+    config = db.query(VideoConfig).first()
+    if config:
+        return config
+    else:
+        raise HTTPException(status_code=404, detail="Face recognition configuration not found")
+
+
+@app.post("/api/video-config")
+async def update_video_config(video_config: VideoConfigBase, db: Session = Depends(get_db)):
+    """Update or create face recognition configuration."""
+    db_config = db.query(VideoConfig).first()
+    if db_config:
+        for key, value in video_config.dict().items():
+            setattr(db_config, key, value)
+    else:
+        db_config = VideoConfig(**video_config.dict())
         db.add(db_config)
     db.commit()
     db.refresh(db_config)
@@ -232,3 +258,37 @@ async def delete_registered_face(user_name: str, db: Session = Depends(get_db)):
         )
     else:
         raise HTTPException(status_code=404, detail=message)
+
+
+@app.get("/api/preview-camera/")
+async def preview_camera(db: Session = Depends(get_db)):
+    """Preview camera stream."""
+    video_config = db.query(VideoConfig).first()
+    if not video_config:
+        raise HTTPException(status_code=404, detail="Video configuration not found")
+    if not video_config.rtsp and video_config.web_camera is None:
+        raise HTTPException(status_code=400, detail="No RTSP URL or webcam index configured")
+    try:
+        frame_bytes = await capture_image_from_camera(
+            camera_source=video_config.web_camera if video_config.web_camera is not None else video_config.rtsp,
+            resize=(video_config.image_width, video_config.image_height),
+        )
+        upload_status, message = MinioClient.upload_object(
+            bucket_name="temporary-data",
+            absolute_path_or_binary=frame_bytes,
+            s3_object_key="/preview/preview_camera_image.jpg",
+            is_binary=True,
+        )
+        if not upload_status:
+            raise HTTPException(status_code=503, detail=message.get("error"))
+        get_url_status, message = MinioClient.get_object_url(
+            bucket_name="temporary-data",
+            s3_object_key="/preview/preview_camera_image.jpg",
+        )
+        if not get_url_status:
+            raise HTTPException(status_code=503, detail=message.get("error"))
+        return {"preview_image_url": message.get("url")}
+
+    except Exception as e:
+        print(f"Error in preview_camera: {e}")
+        raise HTTPException(status_code=500, detail={"error": str(e)})

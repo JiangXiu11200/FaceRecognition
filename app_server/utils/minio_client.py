@@ -142,14 +142,14 @@ class MinioClient:
             return False, {"status": False, "error": str(e)}
 
     @classmethod
-    def get_object_url(cls, bucket_name: str, object_name: str, expires_in_sec: int = 300) -> tuple[bool, dict]:
+    def get_object_url(cls, bucket_name: str, s3_object_key: str, expires_in_sec: int = 300) -> tuple[bool, dict]:
         """Get a pre-signed URL for a file."""
         try:
             client = cls.get_client()
-            client.stat_object(bucket_name, object_name)
+            client.stat_object(bucket_name, s3_object_key)
             url = client.presigned_get_object(
                 bucket_name,
-                object_name,
+                s3_object_key,
                 expires=datetime.timedelta(seconds=expires_in_sec),
                 response_headers={"response-cache-control": f"max-age={expires_in_sec}, public"},
             )

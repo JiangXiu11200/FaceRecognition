@@ -10,8 +10,10 @@ class SystemConfigBase(BaseModel):
 
 
 class VideoConfigBase(BaseModel):
-    rtsp: str = Field(default=None, description="RTSP stream URL (if not None, use RTSP stream)")
-    web_camera: int = Field(default=None, nullable=True, description="Web camera index (if not None, use web camera)")
+    rtsp: str | None = Field(default=None, nullable=True, description="RTSP stream URL (if not None, use RTSP stream)")
+    web_camera: int | None = Field(
+        default=None, nullable=True, description="Web camera index (if not None, use web camera)"
+    )
     image_height: int = Field(default=480, ge=0, le=1080, description="Resize height of the input image")
     image_width: int = Field(default=640, ge=0, le=1920, description="Resize width of the input image")
     detection_range_start_point_x: int = Field(
