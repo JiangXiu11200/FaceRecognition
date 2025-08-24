@@ -95,14 +95,16 @@ class FaceApp:
 
         # Video capture
         self.video_queue = Queue()
-        self.signal_queue = Queue()
+        self.video_capture_status_alive = True
 
         # External detection queue
         self.detection_results_queue = external_detection_queue or Queue()
 
         # FIXME: rtsp 或 web_camera 資料型態不一致，需統一資料型態處理方法
         video_source = self.video_config.rtsp if self.video_config.rtsp else self.video_config.web_camera
-        self.video_capture = video_capturer.VideoCapturer(video_source, self.video_queue)
+        self.video_capture = video_capturer.VideoCapturer(
+            video_source, self.video_queue, self.video_capture_status_alive
+        )
         self.video_capturer_thread = threading.Thread(target=self.video_capture.get_video)
         self.video_capturer_thread.start()
 
@@ -298,7 +300,7 @@ class FaceApp:
         person_name: Optional[str] = None
 
         with self.mp_face_detection as face_detection:
-            while self.running:
+            while self.running and self.video_capture.status_alive:
                 try:
                     self.fps_count += 1
                     self._fps_counter()
@@ -443,17 +445,17 @@ class FaceApp:
                                     face_roi, detection_results, s3_object_key
                                 )
 
-                                log_data = {
-                                    "name": person_name,
-                                    "group": "Unknown",
-                                    "s3_object_key": s3_object_key if upload_status else None,
-                                    "detection_results": detection_results,
-                                    "timestamp": datetime.now().isoformat(),
-                                }
+                            log_data = {
+                                "name": person_name,
+                                "group": "Unknown",
+                                "s3_object_key": s3_object_key if upload_status else None,
+                                "detection_results": detection_results,
+                                "timestamp": datetime.now().isoformat(),
+                            }
 
-                                # Send log data
-                                if loop:
-                                    loop.run_until_complete(self._put_log_async(log_data))
+                            # Send log data
+                            if loop:
+                                loop.run_until_complete(self._put_log_async(log_data))
 
                     # Draw results
                     self._draw_result_information(
@@ -471,10 +473,8 @@ class FaceApp:
                             break
                     else:
                         # FastAPI mode: put frame into queue
-                        if not self.sys_config.debug:
-                            # 每 3 幀發送一次以減少頻寬
-                            if self.fps_count % 3 == 0 and loop:
-                                loop.run_until_complete(self._put_frame_async(frame))
+                        if self.fps_count % 3 == 0 and loop:
+                            loop.run_until_complete(self._put_frame_async(frame))
 
                     if self.mode == RunMode.STANDALONE and self.sys_config.debug:
                         cv2.imshow("video_out", frame)

@@ -13,9 +13,10 @@ class VideoCapturer:
     Though `vide_queue` to store frames and `stop_event` to signal when to stop capturing.
     """
 
-    def __init__(self, rtsp: str, video_queue: Queue):
+    def __init__(self, rtsp: str, video_queue: Queue, status_alive: bool = True):
         self.rtsp = rtsp
         self.video_queue = video_queue
+        self.status_alive = status_alive
         self.stop_event = threading.Event()
 
     def get_video(self) -> None:
@@ -55,6 +56,7 @@ class VideoCapturer:
         finally:
             if self.cap:
                 self.cap.release()
+            self.status_alive = False
             config.logger.debug("Video capturer thread stopped.")
 
     def stop(self):
