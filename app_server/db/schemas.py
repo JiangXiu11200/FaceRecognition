@@ -10,9 +10,11 @@ class SystemConfigBase(BaseModel):
 
 
 class VideoConfigBase(BaseModel):
-    rtsp: str | None = Field(default=None, nullable=True, description="RTSP stream URL (if not None, use RTSP stream)")
+    rtsp: str | None = Field(
+        default=None, json_schema_extra={"nullable": True}, description="RTSP stream URL (if not None, use RTSP stream)"
+    )
     web_camera: int | None = Field(
-        default=None, nullable=True, description="Web camera index (if not None, use web camera)"
+        default=None, json_schema_extra={"nullable": True}, description="Web camera index (if not None, use web camera)"
     )
     image_height: int = Field(default=480, ge=0, le=1080, description="Resize height of the input image")
     image_width: int = Field(default=640, ge=0, le=1920, description="Resize width of the input image")
