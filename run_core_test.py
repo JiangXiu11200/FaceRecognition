@@ -1,8 +1,8 @@
 import unittest
 
-from tests.test_calculation import TestCalculation
-from tests.test_predictor import TestPredictor
-from tests.test_coordinate_detection import TesttestCoordinateDetection
+from tests_core.test_calculation import TestCalculation
+from tests_core.test_coordinate_detection import TesttestCoordinateDetection
+from tests_core.test_predictor import TestPredictor
 
 if __name__ == "__main__":
     loader = unittest.TestLoader()
