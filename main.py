@@ -71,7 +71,12 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            message = json.loads(data)
+            try:
+                message = json.loads(data)
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"type": "error", "message": "Invalid JSON"}))
+                await manager.disconnect(websocket)
+                break
             if message.get("type") == "start_detection":
                 print("⚠️ Starting face detection...")
                 await manager.start_face_detection()
@@ -86,6 +91,8 @@ async def websocket_endpoint(websocket: WebSocket):
             elif message.get("type") == "stop_video_stream":
                 print("⚠️ Stopping video stream...")
                 await manager.stop_video_stream()
+            else:
+                await websocket.send_text(json.dumps({"type": "error", "message": "Unknown message type"}))
 
     except WebSocketDisconnect:
         await manager.disconnect(websocket)
