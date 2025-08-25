@@ -119,10 +119,10 @@ async def update_face_reco_config(face_reco_config: FaceRecognitionConfigBase, d
     """Update or create face recognition configuration."""
     db_config = db.query(FaceRecognitionConfig).first()
     if db_config:
-        for key, value in face_reco_config.dict().items():
+        for key, value in face_reco_config.model_dump().items():
             setattr(db_config, key, value)
     else:
-        db_config = FaceRecognitionConfig(**face_reco_config.dict())
+        db_config = FaceRecognitionConfig(**face_reco_config.model_dump())
         db.add(db_config)
     db.commit()
     db.refresh(db_config)
@@ -144,10 +144,10 @@ async def update_debug_info(system_config: SystemConfigBase, db: Session = Depen
     """Update face recognition service debug mode settings."""
     db_config = db.query(SystemConfig).first()
     if db_config:
-        for key, value in system_config.dict().items():
+        for key, value in system_config.model_dump().items():
             setattr(db_config, key, value)
     else:
-        db_config = SystemConfig(**system_config.dict())
+        db_config = SystemConfig(**system_config.model_dump())
         db.add(db_config)
     db.commit()
     db.refresh(db_config)
@@ -169,10 +169,10 @@ async def update_video_config(video_config: VideoConfigBase, db: Session = Depen
     """Update or create face recognition configuration."""
     db_config = db.query(VideoConfig).first()
     if db_config:
-        for key, value in video_config.dict().items():
+        for key, value in video_config.model_dump().items():
             setattr(db_config, key, value)
     else:
-        db_config = VideoConfig(**video_config.dict())
+        db_config = VideoConfig(**video_config.model_dump())
         db.add(db_config)
     db.commit()
     db.refresh(db_config)
