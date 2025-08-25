@@ -1,3 +1,6 @@
+import package.config as config
+
+
 class CoordinateDetection:
     def __init__(
         self,
@@ -25,5 +28,5 @@ class CoordinateDetection:
                 return True
             return False
         except Exception as err:
-            print("face_box_in_roi mode error: ", err)
+            config.logger.debug(f"face_box_in_roi error: {err}")
             return False

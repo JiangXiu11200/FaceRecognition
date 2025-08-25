@@ -48,7 +48,6 @@ class Predictor:
             return True
         except Exception as err:
             config.logger.error(f"Unable to save feature for {user_name}. Error: {err}")
-            config.logger.debug(traceback.print_exc())
             return False
 
     def face_prediction(self, face_roi: np.ndarray, detection_results: Queue) -> bool:
@@ -78,9 +77,9 @@ class Predictor:
             execution_time = round(end_time - start_time, 3)
             config.logger.info(f"Face Recognition Time: {execution_time} sec.")
             return result
-        except Exception as err:
-            print("face_prediction error: ", err)
-            config.logger.debug(traceback.print_exc())
+        except Exception:
+            error_info = traceback.format_exc()
+            config.logger.debug(error_info)
             return False
 
     def feature_extraction(
@@ -106,9 +105,9 @@ class Predictor:
                 self.dlib_recognition_model.compute_face_descriptor(face_roi, feature_coordinates)
             )
             return current_face_descriptor, feature_coordinates
-        except Exception as err:
-            print("feature_extraction error: ", err)
-            config.logger.debug(traceback.print_exc())
+        except Exception:
+            error_info = traceback.format_exc()
+            config.logger.debug(error_info)
             return None, None
 
     def euclidean_distance(self, current_face_descriptor: np.ndarray) -> tuple[Optional[float], Optional[str]]:
@@ -138,7 +137,7 @@ class Predictor:
 
             config.logger.debug(f"Minimum distance: {min_dist}, matched: {matched_name}")
             return min_dist, matched_name
-        except Exception as err:
-            print("euclidean_distance error: ", err)
-            config.logger.debug(traceback.print_exc())
-            return None
+        except Exception:
+            error_info = traceback.format_exc()
+            config.logger.debug(error_info)
+            return None, None

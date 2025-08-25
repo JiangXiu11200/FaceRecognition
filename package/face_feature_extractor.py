@@ -12,6 +12,8 @@ import cv2
 import dlib
 import numpy as np
 
+import package.config as config
+
 # TODO: 1. 未來將 face features 改成 key-value db
 # TODO: 2. 修正每次註冊都要重新載入 dlib 模型的問題
 
@@ -83,7 +85,8 @@ class FaceFeatureExtractor:
 
             return True, {"face_descriptor": current_face_descriptor}
         except Exception as err:
-            print(traceback.format_exc())
+            error_info = traceback.format_exc()
+            config.logger.debug(f"feature_extraction error: {error_info}")
             return False, {"error": f"Unable to extract features. Error: {err}"}
 
     def save_feature(self, face_descriptor: np.ndarray) -> bool:
