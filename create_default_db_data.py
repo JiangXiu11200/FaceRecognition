@@ -1,7 +1,7 @@
 import typer
 
-from app_server import models
-from app_server.database import SessionLocal
+from app_server.db import models
+from app_server.db.database import SessionLocal
 
 app = typer.Typer()
 
@@ -29,8 +29,8 @@ def init_data():
     typer.echo("- Video configuration initialized!")
 
     face_recognition_config = models.FaceRecognitionConfig(
-        enable=True,
-        set_mode=False,  # FIXME: FastAPI 會報錯
+        enable=True,  # FastAPI 模式不支援 enable，暫時設為 False，未來需移除
+        set_mode=False,  # FIXME: FastAPI 模式不支援 set_mode，暫時設為 False，未來需移除
         dlib_predictor_path="models/dlib/shape_predictor_68_face_landmarks.dat",
         dlib_recognition_model_path="models/dlib/dlib_face_recognition_resnet_model_v1.dat",
         face_model="models/face_recognition/model.csv",
