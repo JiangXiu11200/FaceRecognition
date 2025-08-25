@@ -11,7 +11,7 @@ from package import calculation
 class TestCalculation(unittest.TestCase):
     def setUp(self):
         self.calculation = calculation.Calculation(774, 800)
-        data = numpy.load("./tests/test_data/test_image.npz")
+        data = numpy.load("./tests_core/test_data/test_image.npz")
         self.test_img = data["test_img"]
         self.detection_mp, self.bounding_box_mp = self.setup_mediapipe()
         self.bounding_box_height = round(self.bounding_box_mp.height, 2)

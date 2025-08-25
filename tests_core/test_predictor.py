@@ -11,7 +11,7 @@ class TestPredictor(unittest.TestCase):
     def setUp(self):
         dlib_predictor = dlib.shape_predictor("models/dlib/shape_predictor_68_face_landmarks.dat")
         dlib_recognition_model = dlib.face_recognition_model_v1("models/dlib/dlib_face_recognition_resnet_model_v1.dat")
-        self.face_descriptor = np.array(
+        features = np.array(
             [
                 -0.0694541335105896,
                 0.06430532783269882,
@@ -20,8 +20,10 @@ class TestPredictor(unittest.TestCase):
                 0.012633268721401691,
             ]
         )
+        self.face_descriptor = {}
+        self.face_descriptor["test_user"] = features
         self.sensitivity = 0.4
-        data = np.load("./tests/test_data/test_image.npz")
+        data = np.load("./tests_core/test_data/test_image.npz")
         self.image = data["test_img"]
         self.predictor = predictor.Predictor(
             dlib_predictor, dlib_recognition_model, self.face_descriptor, self.sensitivity
@@ -56,9 +58,9 @@ class TestPredictor(unittest.TestCase):
 
     # tett euclidean_distance
     def test_euclidean_distance_correctness(self):
-        distance = self.predictor.euclidean_distance(self.face_descriptor)
-        self.assertLessEqual(distance, self.sensitivity)
-        face_descriptor = np.array(
+        min_dist, matched_name = self.predictor.euclidean_distance(self.face_descriptor["test_user"])
+        self.assertLessEqual(min_dist, self.sensitivity)
+        features = np.array(
             [
                 -1.0694541335105896,
                 0.06430532783269882,
@@ -67,20 +69,22 @@ class TestPredictor(unittest.TestCase):
                 0.012633268721401691,
             ]
         )
-        distance = self.predictor.euclidean_distance(face_descriptor)
-        self.assertGreaterEqual(distance, self.sensitivity)
+        face_descriptor = {}
+        face_descriptor["test_user"] = features
+        min_dist, matched_name = self.predictor.euclidean_distance(face_descriptor["test_user"])
+        self.assertGreaterEqual(min_dist, self.sensitivity)
 
     def test_euclidean_distance_output_type(self):
-        distance = self.predictor.euclidean_distance(self.face_descriptor)
-        self.assertIsInstance(distance, float)
+        min_dist, matched_name = self.predictor.euclidean_distance(self.face_descriptor["test_user"])
+        self.assertIsInstance(min_dist, float)
 
     def test_euclidean_distance_invalid_input(self):
-        distance = self.predictor.euclidean_distance("invalid_input")
-        self.assertEqual(distance, None)
+        min_dist, matched_name = self.predictor.euclidean_distance("invalid_input")
+        self.assertEqual(min_dist, None)
 
     def test_euclidean_distance_performance(self):
         start_time = time.time()
-        self.predictor.euclidean_distance(self.face_descriptor)
+        self.predictor.euclidean_distance(self.face_descriptor["test_user"])
         elapsed_time = time.time() - start_time
         # 性能判斷, 假設期望在 0.1 秒內完成
         self.assertLess(elapsed_time, 0.1, "Performance degraded, took too long to process.")
