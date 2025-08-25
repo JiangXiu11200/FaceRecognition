@@ -1,3 +1,4 @@
+import logging
 import unittest
 
 from tests_core.test_calculation import TestCalculation
@@ -5,6 +6,7 @@ from tests_core.test_coordinate_detection import TesttestCoordinateDetection
 from tests_core.test_predictor import TestPredictor
 
 if __name__ == "__main__":
+    logging.disable(logging.CRITICAL)  # Disable logging during tests
     loader = unittest.TestLoader()
     runner = unittest.TextTestRunner(verbosity=2)
     suite_test = unittest.TestSuite()
