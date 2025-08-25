@@ -81,7 +81,6 @@ class RecoConfig:
                 pass
 
 
-
 class Settings:
     def __init__(self):
         self.video_config: VideoConfig = None
