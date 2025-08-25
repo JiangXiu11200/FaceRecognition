@@ -11,12 +11,16 @@ dependencies = [
     "dlib==19.22.0",
     "dynaconf==3.2.6",
     "fastapi>=0.116.1",
+    "httpx>=0.28.1",
+    "hypothesis>=6.138.3",
     "loguru>=0.7.3",
     "mediapipe==0.10.5",
     "minio>=7.2.16",
     "numpy==1.26.4",
     "opencv-python>=4.10",
+    "psutil>=7.0.0",
     "pydantic-settings>=2.10.1",
+    "pytest>=8.4.1",
     "python-dotenv>=1.1.1",
     "python-multipart>=0.0.20",
     "ruff>=0.12.5",
@@ -37,3 +41,8 @@ select = ["E", "F", "I", "UP"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
