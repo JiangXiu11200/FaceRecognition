@@ -52,7 +52,12 @@ async def lifespan(app: FastAPI):
 manager = ConnectionManager()
 
 app = FastAPI(
-    title="Face Recognition API", version="0.0.1", documentation_url="/docs", redoc_url="/redoc", lifespan=lifespan
+    title="Face Recognition API",
+    description="API for face recognition system settings.",
+    version="1.0.0",
+    documentation_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # FIXME: For development only, restrict in production
