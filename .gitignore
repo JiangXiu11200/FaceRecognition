@@ -4,7 +4,6 @@ __pycache__
 
 # system neglect
 /models
-*.jpg
 *.log
 
 # Alembic
