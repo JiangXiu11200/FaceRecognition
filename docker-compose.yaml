@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - <YOUR_DIRECTORY>/minio:/data
+    environment:
+      MINIO_ROOT_USER: <YOUR_USERNAME>
+      MINIO_ROOT_PASSWORD: <YOUR_PASSWORD>
+      MINIO_SERVER_URL: "http://127.0.0.1:9000"
+      MINIO_BROWSER_REDIRECT_URL: "http://127.0.0.1:9001"
+    command: server /data --console-address ":9001"
