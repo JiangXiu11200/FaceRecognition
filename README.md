@@ -1,36 +1,115 @@
-# Face Recognition_en
+# Face Recognition
 
-[English Version]() | [繁體中文版](./README_zh-tw.md)
+<p align="center">
+  <a href="https://www.python.org/downloads/release/python-3100/">
+    <img src="https://img.shields.io/badge/Python-v3.10-356d9f?logo=python" alt="Python"/>
+  </a>
+  <a href="https://fastapi.tiangolo.com/">
+    <img src="https://img.shields.io/badge/FastAPI-v0.116.1-028578?logo=FastApi" alt="FastAPI"/>
+  </a>
+  <a href="https://www.min.io/">
+    <img src="https://img.shields.io/badge/MinIO-v7.2.16-C52944?logo=minio" alt="MinIO"/>
+  </a>
+  <a href="https://www.postgresql.org/">
+    <img src="https://img.shields.io/badge/PostgreSQL-v16-%230064a5?logo=postgresql" alt="PostgreSQL"/>
+  </a>
+  <a href="https://pypi.org/project/dlib-bin/19.22.0/">
+    <img src="https://img.shields.io/badge/Python%20Dlib-v19.22.0-ee6464?logo=dlib" alt="Dlib"/>
+  </a>
+  <a href="https://pypi.org/project/mediapipe/">
+    <img src="https://img.shields.io/badge/Mediapipe-v0.10.5-d56dcb?logo=Mediapipe" alt="Mediapipe"/>
+  </a>
+</p>
 
-[![Static Badge](https://img.shields.io/badge/Python-v3.9.6-356d9f)](https://www.python.org/downloads/release/python-396/)[![Static Badge](https://img.shields.io/badge/Python%20Dlib-v19.22.0-ee6464)](https://pypi.org/project/dlib-bin/19.22.0/)[![Static Badge](https://img.shields.io/badge/Mediapipe-v0.10.5-d56dcb)](https://pypi.org/project/mediapipe/)[![Static Badge](https://img.shields.io/badge/cmake-v3.30.2-014aae)](https://pypi.org/project/cmake/)
+<p align="center">
+Readme Languages: <a href="./README.md">English 🇺🇸</a> / <a href="./README_zh-tw.md">繁體中文版 🇹🇼</a>
+</p>
 
 ## Description
 
-This project was developed using the Python programming language, utilizing Dlib and Mediapipe to create a small facial recognition access control system.
+This project integrates OpenCV, Dlib, and MediaPipe to implement a facial recognition system, which is encapsulated as a microservice using FastAPI and connected to the web-based interface provided by [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem), forming a complete facial recognition solution.
 
-Dlib itself has facial tracking capabilities, but its tracking speed is slow. Therefore, I introduced Google’s Mediapipe for face tracking, passing the detected faces to Dlib for recognition, significantly improving overall performance. However, I quickly realized that relying solely on facial features for recognition could not differentiate between a real person and an image in front of the camera. To address this issue, I further employed OpenCV for image processing, detecting blinks of the left and right eyes to determine if the subject is a real person. Only if the subject is real will the system proceed with recognition.
+While Dlib offers robust facial recognition capabilities, its performance in real-time face tracking is relatively limited. To improve speed, this project incorporates MediaPipe for real-time facial tracking, combined with custom ROI (Region of Interest) optimization, significantly enhancing overall efficiency.
 
-## System requirements
+Additionally, to address the issue where facial features alone cannot distinguish between a real person and a photo, this project integrates OpenCV for eye-region image processing and implements blink detection as an anti-spoofing mechanism. This ensures that the recognized subject is a real person, thereby improving system security.
 
-- Web Camera or IP Camera *1 (30 FPS)
-- OS: Windows / Mac OS / ubuntu (Any system that supports Python and packages)
-- Application: Indoor bright fluorescent light space
-- Python packages:
-    - Python 3.9,
-    - ruff 0.12.5
-    - dynaconf 3.2.6
-    - numpy 1.26.4
-    - dlib 19.22.0
-    - mediapipe 0.10.5
-    - cmake 3.30.2+
-    - opencv-python 4.10.0+
+## Features
+
+- **Real-Time Face Recognition**: Implements face recognition using Dlib, with user registration and deletion capabilities for easy management.
+- **Anti-Spoofing Verification**: Detects eye blinking to distinguish real persons from static photos.
+- **FastAPI Microservice**: RESTful API design for easy integration and deployment.
+- **Static File Storag**: Integrates MinIO (S3) to upload both successfully and unsuccessfully recognized face images, allowing for easy review and management.
+- **Real-Time Communication**: Streams recognition images in real-time via WebSocket and pushes recognition results instantly.
+- **Modular Architecture**: The face recognition module can run independently or be triggered via API.
+
+## Architecture
+
+### System
+
+![Image](./assets/images/9_FaceReco_Architecture.jpg)
+
+The system is mainly divided into the following components:
+- **Face Recognition Service**: The core of face recognition, responsible for image capture and processing, facial feature extraction, feature difference calculation, and blink detection.
+- **Connection Manager**: Handles Web Client WebSocket connections and various operations, including starting/stopping streams, image streaming, and real-time transmission of recognition results.
+- **FaceApp Manager**: Receives commands from the Connection Manager and controls whether to start or stop the Face Recognition process.
+- **Server Command Handler**: Processes RESTful API requests from [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem), including user registration, user deletion, and system parameter configuration.
+
+### System Breakdown
+
+![Image](./assets/images/10_Face_Reco_Breakdown.jpg)
+
+In terms of system decomposition, it is divided into App_Server and Core Application.
+The App_Server is built on FastAPI, implementing WebSocket and RESTful API functionalities to interface with the Web Client and [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem).
+The Core Application is a facial recognition algorithm.
+
+### Database ER Diagram
+
+![Image](./assets/images/11_FastAPI_DB_ERD.jpg)
+
+The database design is simple, consisting of four independent tables with no interrelationships:
+
+- **VideoConfig**: Stores parameters for VideoCapture.
+- **FaceRecognitionConfig**: Stores parameters for face recognition.
+- **SystemLogs**: Stores recognition results.
+- **SystenConfig**: Stores settings for the face recognition debug mode.
+
+### Swagger API
+
+![Image](./assets/images/12_SwaggerAPI.png)
+
+- /api/health: Health Check [GET]: Check connection and service status.
+- /api/face-reco-config [GET]: Read face recognition configuration.
+- /api/face-reco-config [POST]: Update or create face recognition configuration.
+- /api/debug [GET]: Get face recognition service debug mode settings.
+- /api/debug [POST]: Update face recognition service debug mode settings.
+- /api/video-config [GET]: Read face recognition configuration.
+- /api/video-config [POST]: Update or create face recognition configuration.
+- /api/register-face [POST]: Register a new face with the provided image and name.
+- /api/delete-registered-face/{user_name} [POST]: Delete a registered face by name.
+- /api/preview-camera/ [GET]: Preview camera stream.
+
+## Get Started
+
+### System requirements
+
+System Requirements
+- Hardware:
+  - Web Camera or IP Camera *1 (30 FPS)
+- Operating System:
+  - Windows / macOS / Ubuntu
+- Recommended Environment:
+  - Well-lit indoor setting
+- Main Dependencies:
+  - Python 3.10
+  - dlib 19.22.0
+  - mediapipe 0.10.5
+  - opencv-python 4.10
+  - fastapi 0.116.0
+  - minio 7.2.16
 
 ## Installation
 
-### Git clone
-```
-git clone https://github.com/JiangXiu11200/FaceRecognition.git
-```
+Before getting started, please install Python 3.10 and the uv package management tool. uv is an efficient environment and package manager that allows you to quickly set up the project environment.
 
 ### Install uv environment tools
 
@@ -44,8 +123,8 @@ Though uv and pyproject to build virtual environment
 uv sync
 ```
 
-
 ### Download Dlib model
+
 - Official website:
   - [Dlib C++ Library](http://dlib.net/)
 - Official download link:
@@ -55,42 +134,10 @@ uv sync
   - [dlib_face_recognition_resnet_model_v1](https://drive.google.com/file/d/1VcyOqEBOWIOuIx0L-jwQFdZ-BtkDnAtV/view?usp=sharing)
   - [shape_predictor_68_face_landmarks](https://drive.google.com/file/d/15XQmMtGZRBo7N4aHPUvZxKIgIDbd7qQ2/view?usp=sharing)
 
-## Setup
+## Run in Standalone Mode
 
-### Folder structure
+> Run facial recognition independently. If you want to use FastAPI, please skip to [FastAPI Mode](#run-in-fastapi-mode)
 
-> '*' is a subdirectory
-> The *logs* and *models* directories need to be created by yourself
-```
-FaceRecognition
-  ├──.gitignore
-  ├──face_detection.py
-  ├──logger_config.conf
-  ├──README.md
-  ├──requirements.txt
-  ├──run_test.py
-  ├──setting.json
-  ├──*logs*
-  ├──*models*
-  │   └─dlib
-  │      ├─ dlib_face_recognition_resnet_model_v1.dat
-  │      └─ shape_predictor_68_face_landmarks.dat
-  ├──*package*
-  │      ├─ __init__.py
-  │      ├─ blink_detector.py
-  │      ├─ calculation.py
-  │      ├─ config.py
-  │      ├─ coordinate_detection.py
-  │      ├─ predictor.py
-  │      ├─ settings.py
-  │      └─ video_capturer.py
-  └──*tests*
-      ├─ test_calculation.py
-      ├─ test_coordinate_detection.py
-      ├─ test_predictor.py
-      └─*test_data*
-         └─ test_image.npz
-```
 
 ### System configuration
 
@@ -136,29 +183,30 @@ The system directory contains a settings.json configuration file.
 ```
 
 - video_config: Input video settings
-    - rtsp: Input video path, can be RTSP or Web Camera
-    - image_height: Image resize height
-    - image_width: Image resize width
-    - detection_range_start_point: Face detection range, bounding box top-left coordinates
-    - detection_range_end_point: Face detection range, bounding box bottom-right coordinates
+  - rtsp: Path to the video stream (string). If the video source is a string path, use the rtsp field and set web_camera to None.
+  - web_camera: Camera index (integer). If the video source is an integer, use the web_camera field and set rtsp to an empty string "".
+  - image_height: Resized image height.
+  - image_width: Resized image width.
+  - detection_range_start_point: Face detection range, bounding box top-left coordinates.
+  - detection_range_end_point: Face detection range, bounding box bottom-right coordinates.
 
 - sys_config: System settings
-    - debug: Debug mode
-    - logs_path: Path for writing log files
+    - debug: Debug mode.
+    - logs_path: Path for writing log files.
 
 - reco_config: Face recognition parameters
-    - enable: Enable detection functionality
-    - set_mode: Enable feature extraction functionality, outputs detected faces to models.csv
-    - enable_blink_detection: Enable eyes blink detection
-    - dlib_predictor: Path to the Dlib 68 face landmarks model
-    - dlib_recognition_model: Path to Dlib face recognition ResNet model
-    - face_model: Path to store the registered facial feature model (.csv file)
-    - minimum_bounding_box_height: Face distance threshold; a larger number means the face must be closer to the camera for recognition. The default for FHD cameras is 0.4
-    - minimum_face_detection_score: Face detection confidence score, default is 0.8
-    - eyes_detection_brightness_threshold: Preprocessing average brightness threshold for blink detection
-    - eyes_detection_brightness_value: Dynamic binarization threshold for blink detection preprocessing; adjusts binarization parameters based on brightness in bright or dark environments
-    - sensitivity: Euclidean distance difference for face detection; a lower value indicates a higher detection pass rate
-    - consecutive_prediction_intervals: Interval between consecutive face detection attempts in FPS
+    - enable: Enable the detection feature.
+    - set_mode: Enable feature extraction mode, which outputs the detected face to models.csv.
+    - enable_blink_detection: Enable blink detection for liveness verification.
+    - dlib_predictor: Path to the Dlib 68 face landmarks model file.
+    - dlib_recognition_model: Path to the Dlib face recognition ResNet model file.
+    - face_model: Path to the registered face feature model (.csv file).
+    - minimum_bounding_box_height: Face distance threshold (0.1~1.0). Higher values require the face to be closer to the camera for recognition. Default is 0.4 for FHD cameras.
+    - minimum_face_detection_score: Minimum confidence score for face detection. Default is 0.8.
+    - eyes_detection_brightness_threshold: Average brightness threshold for pre-processing in blink detection (0~255).
+    - eyes_detection_brightness_value: Dynamic threshold for image binarization during blink detection [0~255, 0~255]. Adjust this for bright or dark environments (experimental feature).
+    - sensitivity: Euclidean distance threshold for face verification (0.0~1.0). Lower values indicate stricter matching (higher accuracy).
+    - consecutive_prediction_intervals: Interval for consecutive face recognition attempts, based on camera FPS. For example, if the camera runs at 30 FPS, setting this to 90 means recognition occurs every 3 seconds.
 
 
 You can refer to my settings:
@@ -218,14 +266,15 @@ uv run python face_detection.py
 | `R` or `r` | Execute Recognition |
 | `Q` or `q` | Exit |
 
-- Register Face: When a face enters the recognition area, pressing ‘S’ or ‘s’ will calculate the facial features and output the result to a CSV file.
-- Execute Recognition: After registering the facial features, the system must be restarted. Upon restarting, the system will read the CSV data. When a face re-enters the recognition area, pressing ‘R’ or ‘r’ will perform facial detection.
+- Register Face: When a face enters the recognition area, press ‘S’ or ‘s’ to compute its feature vector and export the result to the CSV path specified in face_model.
+- Run Recognition: After registering a face, restart the system. Upon restart, the system loads the stored face features. When a face enters the recognition area again, press ‘R’ or ‘r’ to perform face detection.
 - Exit: Close the system.
 
-### Non-Debug Mode Startup (Debug = false)
+### Product mode operation method
 
-When starting with debug=false, once a face enters the recognition area and the system detects a blink, the recognition mechanism will automatically trigger to perform facial recognition.
-The detection frequency is determined by the `consecutive_prediction_intervals` setting in the configuration file.
+When sys_config.Debug is set to False, the system automatically starts recognition once a face enters the recognition area.
+If reco_config.enable_blink_detection is set to True, recognition will be triggered when a blink is detected.
+
 
 ## Operation Example
 
@@ -267,6 +316,124 @@ Through real tests, we can observe the preprocessing results when eyes are open 
 ![眨眼判斷流程圖](./assets/images/6_processing.png)
 By processing frame by frame and calculating over 16 consecutive frames (the time for one blink and reopen), we can clearly observe the blink action.
 
+
+## Tests
+
+To ensure each functional module operates as expected and to prevent logical errors, calculation mistakes, or improper data structure handling during development, unit tests are executed using Unittest for every development cycle:
+
+![image](./assets/images/7_core_unittest.png)
+
+The test coverage includes validation of computational results and data types for each sub-module, ensuring not only correctness under normal conditions but also system stability and predictable behavior under abnormal scenarios.
+
+## Run in FastAPI Mode
+
+Before getting started, please install Docker and Docker Compose, as the MinIO S3 service will be launched using Docker.
+
+### Install and Start Minio S3
+
+> Reference GitHub: [minio](https://github.com/minio/minio)
+
+Docker pull
+
+```bash
+sudo docker pull quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z
+```
+
+Create a MinIO S3 local static directory
+
+```bash
+mkdir /minio
+```
+
+Run MinIO S3 using Docker-compose
+Set the root user and password
+
+```yaml
+version: "3.8"
+services:
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - /minio:/data
+    environment:
+      MINIO_ROOT_USER: <YOUR_USERNAME>
+      MINIO_ROOT_PASSWORD: <YOUR_PASSWORD>
+      MINIO_SERVER_URL: "http://127.0.0.1:9000"
+      MINIO_BROWSER_REDIRECT_URL: "http://127.0.0.1:9001"
+    command: server /data --console-address ":9001"
+```
+
+```bash
+sudo docker-compose up
+```
+
+Initialize Buckets
+
+```bash
+uv run python3 app_server/utils/create_buckets.py
+```
+
+### Environment Settings
+
+FastAPI environment variables can be configured via a `.env` file, where SERVER_ENDPOINT and the `External Log Server` correspond to the endpoint and API URL used when integrating with [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem).
+
+
+```
+# Server Configuration
+SERVER_ENDPOINT=<YOUR_SERVER_IP:PORT_OR_DOMAIN>
+
+# Database Configuration
+DATABASE_URL=sqlite:///./face_detection.db
+
+# External Log Server 
+EXTERNAL_ACTIVITY_LOGS_SERVER_URL = "http://localhost:8000/api/activity-logs/face-recognition/"
+EXTERNAL_ALARM_LOGS_SERVER_URL = "http://localhost:8000/api/alarm-logs/"
+
+
+# MinIO S3 Configuration
+
+UPLOAD_TO_S3=True
+
+MINIO_ENDPOINT=127.0.0.1:9000
+MINIO_ACCESS_KEY=<YOUR_MINIO_ACCESS_USERNAME>
+MINIO_SECRET_KEY=<YOUR_MINIO_ACCESS_PASSWORD>
+
+CONNECT_TIMEOUT=10
+READ_TIMEOUT=1
+TOTAL_TIMEOUT=30
+
+MAX_RETRIES=0
+BACKOFF_FACTOR=0.3
+POOL_MAXSIZE=10
+POOL_BLOCK=False
+
+ENABLE_SSL=False
+CA_PATH=
+```
+
+### Execution
+
+```
+uv run uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+### Tests
+
+To ensure the stability and security of the system’s API under various scenarios, we have implemented comprehensive unit and integration tests, covering:
+
+- Positive Testing: Verify that the API behaves as expected with valid inputs.
+- Negative Testing: Check that abnormal or erroneous inputs are safely handled.
+- Monkey Testing: Test the system’s robustness using random or unexpected data, ensuring it does not crash due to unforeseen inputs.
+
+Through these tests, the API’s functionality and system stability can be continuously validated throughout the development process.
+
+![Image](./assets/images/8_app_server_unittest.png)
+
 ### License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
@@ -276,5 +443,6 @@ This project uses the following third-party libraries:
 
 - [MediaPipe](https://github.com/google/mediapipe): Licensed under the Apache License 2.0.
 - [dlib](http://dlib.net/): Licensed under the Boost Software License 1.0.
+- [minio](https://github.com/minio/minio)： Licensed under the AGPL-3.0 License.
 
 Please refer to their respective licenses for details.
