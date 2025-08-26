@@ -136,7 +136,7 @@ class Calculation:
                 blink_state = False
             return blink_state, left_median, right_median
         except Exception as err:
-            print(f"blink_detect error: {err}")
+            config.logger.debug(f"blink_detect exception: {err}")
             return None, None, None
 
     @staticmethod
