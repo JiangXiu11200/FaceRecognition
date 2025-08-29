@@ -11,6 +11,7 @@ load_dotenv(ENV_PATH / ".env")
 
 ACTIVITY_LOGS_URL = os.getenv("EXTERNAL_ACTIVITY_LOGS_SERVER_URL")
 ALARM_LOGS_URL = os.getenv("EXTERNAL_ALARM_LOGS_SERVER_URL")
+INTERNAL_API_TOKEN = os.getenv("INTERNAL_API_TOKEN")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +27,7 @@ async def post_log_to_server(log_data: dict, server_url: str = None):
         server_url: External server URL (from environment variable or config)
     """
     server_url = ACTIVITY_LOGS_URL if log_data.get("detection_results") else ALARM_LOGS_URL
+    header = {"X-Internal-Token": INTERNAL_API_TOKEN}
 
     if not server_url:
         logger.warning("No external log server URL configured")
@@ -33,7 +35,9 @@ async def post_log_to_server(log_data: dict, server_url: str = None):
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(f"{server_url}", json=log_data, timeout=aiohttp.ClientTimeout(total=5)) as response:
+            async with session.post(
+                f"{server_url}", json=log_data, timeout=aiohttp.ClientTimeout(total=5), headers=header
+            ) as response:
                 if response.status == 200:
                     logger.info("Successfully posted log to external server")
                 else:
