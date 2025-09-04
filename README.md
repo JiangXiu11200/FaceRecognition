@@ -1,4 +1,4 @@
-# Face Recognition
+# Face Recognition_zh-TW
 
 <p align="center">
   <a href="https://www.python.org/downloads/release/python-3100/">
@@ -22,25 +22,25 @@
 </p>
 
 <p align="center">
-Readme Languages: <a href="./README.md">English 🇺🇸</a> / <a href="./README_zh-tw.md">繁體中文版 🇹🇼</a>
+Readme Languages: <a href="./README_en.md">English 🇺🇸</a> / <a href="./README.md">繁體中文版 🇹🇼</a>
 </p>
 
 ## Description
 
-This project integrates OpenCV, Dlib, and MediaPipe to implement a facial recognition system, which is encapsulated as a microservice using FastAPI and connected to the web-based interface provided by [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem), forming a complete facial recognition solution.
+本專案結合 OpenCV、Dlib 與 Mediapipe，實現人臉辨識功能，並透過 FastAPI 封裝成微服務與 [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem) 提供的網頁系統串接，整合成一項完整的人臉辨識系統。
 
-While Dlib offers robust facial recognition capabilities, its performance in real-time face tracking is relatively limited. To improve speed, this project incorporates MediaPipe for real-time facial tracking, combined with custom ROI (Region of Interest) optimization, significantly enhancing overall efficiency.
+Dlib 具備穩定的人臉辨識功能，但在人臉追蹤效能上相對不足。為提升速度，本專案加入了 MediaPipe 進行即時人臉追蹤，並搭配自訂 ROI (Region of Interest) 進行優化，顯著提升整體效能。
 
-Additionally, to address the issue where facial features alone cannot distinguish between a real person and a photo, this project integrates OpenCV for eye-region image processing and implements blink detection as an anti-spoofing mechanism. This ensures that the recognized subject is a real person, thereby improving system security.
+且為解決僅靠人臉特徵無法區分「真人」與「照片」的問題，本專案額外整合 OpenCV 做眼睛部分的影像處理，實作 眨動檢測 作為防偽機制，確保辨識對象為真人，提升系統安全性。
 
 ## Features
 
-- **Real-Time Face Recognition**: Implements face recognition using Dlib, with user registration and deletion capabilities for easy management.
-- **Anti-Spoofing Verification**: Detects eye blinking to distinguish real persons from static photos.
-- **FastAPI Microservice**: RESTful API design for easy integration and deployment.
-- **Static File Storag**: Integrates MinIO (S3) to upload both successfully and unsuccessfully recognized face images, allowing for easy review and management.
-- **Real-Time Communication**: Streams recognition images in real-time via WebSocket and pushes recognition results instantly.
-- **Modular Architecture**: The face recognition module can run independently or be triggered via API.
+- **即時人臉辨識**：利用 Dlib 實現人臉辨識，並提供用戶註冊與刪除功能，便於管理。
+- **防偽驗證**：透過 眼睛眨動檢測 區分真人與靜態照片。
+- **FastAPI 微服務**：RESTful API 設計，易於整合與部署。
+- **靜態檔案儲存**：將辨識成功或失敗的人臉影像上傳，便於後續查閱與管理。
+- **即時通訊**：透過 WebSocket 即時串流辨識影像，並即時推送辨識結果。
+- **模組化架構**：人臉辨識模組可獨立運行，也可透過 API 調用啟動。
 
 ## Architecture
 
@@ -48,34 +48,35 @@ Additionally, to address the issue where facial features alone cannot distinguis
 
 ![Image](./assets/images/9_FaceReco_Architecture.jpg)
 
-The system is mainly divided into the following components:
-- **Face Recognition Service**: The core of face recognition, responsible for image capture and processing, facial feature extraction, feature difference calculation, and blink detection.
-- **Connection Manager**: Handles Web Client WebSocket connections and various operations, including starting/stopping streams, image streaming, and real-time transmission of recognition results.
-- **FaceApp Manager**: Receives commands from the Connection Manager and controls whether to start or stop the Face Recognition process.
-- **Server Command Handler**: Processes RESTful API requests from [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem), including user registration, user deletion, and system parameter configuration.
+系統主要分為幾個部分：
+
+- **Face Recognition Servic**：人臉辨識核心，負責影像擷取與處理、人臉特徵擷取、特徵差異計算、眨眼辨識等主要功能。
+- **Connection Manager**：負責 Wev Client 的 Web Socket 連線與各種操作，包括啟與停用串流、影像串流、辨識結果資訊即時傳遞。
+- **FaceApp Manager**：負責接收 Connection Manager 的指令，控制是否建立或關閉 Face Recognition 程序。
+- **Server Command Handler**：負責處理來自 [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem) 所發出的 RESTFul API ，用於註冊用戶、刪除用戶、系統參數設置等功能。
 
 ### System Breakdown
 
 ![Image](./assets/images/10_Face_Reco_Breakdown.jpg)
 
-In terms of system decomposition, it is divided into App_Server and Core Application.
-The App_Server is built on FastAPI, implementing WebSocket and RESTful API functionalities to interface with the Web Client and [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem).
-The Core Application is a facial recognition algorithm.
+在系統分解上，則分為 App_Server 與 Core Application，其中 App_Server 以 FastAPI 為核心開發 WebSocket 與 RESTFul API 公能，用於對接 Web Client 與  [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem)；而 Core Application 為人臉辨識核心算法。
 
 ### Database ER Diagram
 
 ![Image](./assets/images/11_FastAPI_DB_ERD.jpg)
 
-The database design is simple, consisting of four independent tables with no interrelationships:
+資料庫部分則分為四張獨立的資料表，非常單純，彼此並無互相關聯。
 
-- **VideoConfig**: Stores parameters for VideoCapture.
-- **FaceRecognitionConfig**: Stores parameters for face recognition.
-- **SystemLogs**: Stores recognition results.
-- **SystenConfig**: Stores settings for the face recognition debug mode.
+- **VideoConfig**：存放 VideoCapture 時的參數。
+- **FaceRecognitionConfig**：人臉辨識參數。
+- **SystemLogs**：辨識結果。
+- **SystenConfig**：人臉辨識 Debug 模式設定。
+
 
 ### Swagger API
 
 ![Image](./assets/images/12_SwaggerAPI.png)
+
 
 - /api/health: Health Check [GET]: Check connection and service status.
 - /api/face-reco-config [GET]: Read face recognition configuration.
@@ -92,56 +93,58 @@ The database design is simple, consisting of four independent tables with no int
 
 ### System requirements
 
-System Requirements
-- Hardware:
+- 硬體需求：
   - Web Camera or IP Camera *1 (30 FPS)
-- Operating System:
-  - Windows / macOS / Ubuntu
-- Recommended Environment:
-  - Well-lit indoor setting
-- Main Dependencies:
-  - Python 3.10
-  - dlib 19.22.0
-  - mediapipe 0.10.5
-  - opencv-python 4.10
-  - fastapi 0.116.0
-  - minio 7.2.16
+- 作業系統:
+  - Windows / Mac OS / ubuntu
+- 最佳使用環境:
+  - 室內明亮環境
+- 主要套件:
+    - python 3.10,
+    - dlib 19.22.0
+    - mediapipe 0.10.5
+    - opencv-python 4.10
+    - fastapi 0.116.0
+    - minio 7.2.16
 
-## Installation
+### Installation
 
-Before getting started, please install Python 3.10 and the uv package management tool. uv is an efficient environment and package manager that allows you to quickly set up the project environment.
+開始前，請先安裝 Python 3.10 版本以及 uv 套件管理工具。uv 是一個高效的環境與套件管理工具，可快速建立本專案所需環境。
 
-### Install uv environment tools
 
-Install uv (You can refer to [GitHub: astral/uv](https://github.com/astral-sh/uv))
+#### 下載 uv 環境管理工具
+
+下載 uv tools (參考 [GitHub: astral/uv](https://github.com/astral-sh/uv))
+
 ```
 pip install uv
 ```
 
-Though uv and pyproject to build virtual environment
+透過 uv 與 pyproject.toml 建立虛擬環境
 ```
 uv sync
 ```
 
-### Download Dlib model
+#### 下載 Dlib 模型
 
-- Official website:
+- 官方網站:
   - [Dlib C++ Library](http://dlib.net/)
-- Official download link:
+- 官方載點: 
   - [dlib_face_recognition_resnet_model_v1](https://dlib.net/files/dlib_face_recognition_resnet_model_v1.dat.bz2)
   - [shape_predictor_68_face_landmarks](https://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2)
-- Local download link:
+- 本地載點:
   - [dlib_face_recognition_resnet_model_v1](https://drive.google.com/file/d/1VcyOqEBOWIOuIx0L-jwQFdZ-BtkDnAtV/view?usp=sharing)
   - [shape_predictor_68_face_landmarks](https://drive.google.com/file/d/15XQmMtGZRBo7N4aHPUvZxKIgIDbd7qQ2/view?usp=sharing)
 
+
 ## Run in Standalone Mode
 
-> Run facial recognition independently. If you want to use FastAPI, please skip to [FastAPI Mode](#run-in-fastapi-mode)
+> 獨立執行人臉辨識，若要透過 FastAPI，請跳到 [FastAPI Mode](#run-in-fastapi-mode)
 
 
 ### System configuration
 
-The system directory contains a settings.json configuration file.
+系統目錄中包含了一個 settings.json 設定檔，其說明如下:
 ```json=
 {
   "video_config": {
@@ -182,35 +185,33 @@ The system directory contains a settings.json configuration file.
 }
 ```
 
-- video_config: Input video settings
-  - rtsp: Path to the video stream (string). If the video source is a string path, use the rtsp field and set web_camera to None.
-  - web_camera: Camera index (integer). If the video source is an integer, use the web_camera field and set rtsp to an empty string "".
-  - image_height: Resized image height.
-  - image_width: Resized image width.
-  - detection_range_start_point: Face detection range, bounding box top-left coordinates.
-  - detection_range_end_point: Face detection range, bounding box bottom-right coordinates.
-
-- sys_config: System settings
-    - debug: Debug mode.
-    - logs_path: Path for writing log files.
-
-- reco_config: Face recognition parameters
-    - enable: Enable the detection feature.
-    - set_mode: Enable feature extraction mode, which outputs the detected face to models.csv.
-    - enable_blink_detection: Enable blink detection for liveness verification.
-    - dlib_predictor: Path to the Dlib 68 face landmarks model file.
-    - dlib_recognition_model: Path to the Dlib face recognition ResNet model file.
-    - face_model: Path to the registered face feature model (.csv file).
-    - minimum_bounding_box_height: Face distance threshold (0.1~1.0). Higher values require the face to be closer to the camera for recognition. Default is 0.4 for FHD cameras.
-    - minimum_face_detection_score: Minimum confidence score for face detection. Default is 0.8.
-    - eyes_detection_brightness_threshold: Average brightness threshold for pre-processing in blink detection (0~255).
-    - eyes_detection_brightness_value: Dynamic threshold for image binarization during blink detection [0~255, 0~255]. Adjust this for bright or dark environments (experimental feature).
-    - sensitivity: Euclidean distance threshold for face verification (0.0~1.0). Lower values indicate stricter matching (higher accuracy).
-    - consecutive_prediction_intervals: Interval for consecutive face recognition attempts, based on camera FPS. For example, if the camera runs at 30 FPS, setting this to 90 means recognition occurs every 3 seconds.
+- video_config: 輸入影像設定
+    - rtsp: 影像路徑(string)。若影像路徑為字串，使用 rtsp 欄位，web_camera 設為 None。
+    - web_camera: 影像路徑(integer)。若影像路徑為整數，使用 web_camera 欄位，rtsp 設為 ""。
+    - image_height: 影像resize高
+    - image_width: 影像resize寬
+    - detection_range_start_point: 人臉檢測範圍，bounding box左上座標
+    - detection_range_end_point: 人臉檢測範圍，bounding box右下座標
+- sys_config: 系統設定
+    - debug: debug模式。
+    - logs_path: 寫出log檔案路徑
+- reco_config: 人臉辨識參數minimum_face_detection_score: 
+    - enable: 開啟檢測功能
+    - set_mode: 開啟特徵擷取功能，會輸出當前鏡頭下人臉到models.csv
+    - enable_blink_detection: 開啟眨眼辨識功能
+    - dlib_predictor: Dlib 68 face landmarks模型路徑
+    - dlib_recognition_model: Dlibface recognition resnet模型路徑
+    - face_model: 存放登錄的人臉特徵模型路徑 (.csv file)
+    - minimum_bounding_box_height: 人臉距離判斷 0.1~1.0, 數字越大代表人臉距離鏡頭越近才會辨識, FHD鏡頭預設0.4
+    - minimum_face_detection_score: 人臉檢測信心分數, 預設為0.8
+    - eyes_detection_brightness_threshold: 眨眼檢測影像前處理平均亮度門檻 0~255
+    - eyes_detection_brightness_value: 眨眼檢測前處理的二值化動態門檻 [0~255, 0~255], 透過亮度門檻條整明亮或陰暗時的二值化參數 (測試中)
+    - sensitivity: 人臉檢測歐幾裡得距離差 0.0~1.0，數值越低表示檢測通過率更高
+    - consecutive_prediction_intervals: 連續進行人臉檢測的fps間隔, 依攝影機幀數，假設攝影機為 30fps, 設為參數設為90 等同於3秒辨識一次
 
 
-You can refer to my settings:
-Place the dlib model in the /models/dlib/ directory and use the Web Camera on your computer to start the system.
+你可以參考我的設定:
+將dlib模型放置/models/dlib/目錄下，並使用電腦上的Web Camera來啟動系統。
 
 ```json=
 {
@@ -260,42 +261,45 @@ uv run python face_detection.py
 
 ### Debug mode operation method
 
-| Keypress | Actions |
+若將 sys_config.Debug 設為 True，則需透過鍵盤事件驅動。
+
+| 按鍵 | 動作 |
 | -------- | -------- |
-| `S` or `s` | Register Face |
-| `R` or `r` | Execute Recognition |
-| `Q` or `q` | Exit |
+| `S` or `s` | 登錄人臉 |
+| `R` or `r` | 執行辨識 |
+| `Q` or `q` | 關閉 |
 
-- Register Face: When a face enters the recognition area, press ‘S’ or ‘s’ to compute its feature vector and export the result to the CSV path specified in face_model.
-- Run Recognition: After registering a face, restart the system. Upon restart, the system loads the stored face features. When a face enters the recognition area again, press ‘R’ or ‘r’ to perform face detection.
-- Exit: Close the system.
+- 登錄人臉: 當人臉進入辨識區域內時，按下'S'或's'會將人臉進行特徵運算並輸出結果至 face_model 所設定的 csv 路徑。
+- 執行辨識: 人臉特徵後必須重新啟動系統，重啟後系統會讀入人臉特徵，當人臉再次進入辨識區域內時，按下 'R' 或 'r' 進行人臉檢測。
+- 離開: 關閉系統。
 
-### Product mode operation method
+### Product Mode operation method
 
-When sys_config.Debug is set to False, the system automatically starts recognition once a face enters the recognition area.
-If reco_config.enable_blink_detection is set to True, recognition will be triggered when a blink is detected.
+當 sys_config.Debug 設為 False 時，當人臉進入辨識區域後，系統會自動開始辨識。若 reco_config.enable_blink_detection 為 True，當系統偵測到雙眼眨眼，則會觸發辨識。
 
+## 操作實例
 
-## Operation Example
-
-### 1. Start the System
+### 1. 啟動系統
 ![image](./assets/images/1_Start_the_system.png)
 
-### 2. Face Registration
-Press ‘S’ or ‘s’ on the keyboard, and the system will use the dlib model to capture facial feature points, saving them to model.csv.
+### 2. 登錄人臉
+
+按下鍵盤'S'或's'，系統會透過dlib模型取得人臉特徵點，並輸出至model.csv中。
 ![image](./assets/images/2_Face_Registration.png)
 
-The model.csv file stores the facial feature information of registered faces.
+model.csv中儲存了登錄的人臉特徵資訊。
 ![image](./assets/images/2.The_model_csv_file.png)
 
-### 3. Face Recognition
-Restart the system to load the model. After starting, press ‘R’ or ‘r’ on the keyboard to initiate facial recognition.
+### 3. 人臉辨識
+
+重新啟動系統，使其將model載入。啟動後，按下鍵盤'R'或'r'進行辨識。
 ![image](./assets/images/3_Face_Recognition.png)
 
-### 4. Eyes blink Parameters Configuration
-The system configuration file includes two parameters: `eyes_detection_brightness_threshold` and `eyes_detection_brightness_value`. When the face gets closer to the camera, the system calculates the average brightness of the facial bounding box and logs it:
+### 4. 眨眼參數設定
+
+系統設定檔中包含了`eyes_detection_brightness_threshold`和`eyes_detection_brightness_value`兩項參數。當臉部靠近鏡頭時，系統會計算臉部bounding box的平均亮度，並顯示在log檔中:
 ![image](./assets/images/4_Blink_Parameters_Configuration.png)
-`eyes_detection_brightness_threshold` sets the brightness threshold, while `eyes_detection_brightness_value` is a list (list[int[], int[]]) used to set the binarization parameters for the eyes’ bounding box.
+`eyes_detection_brightness_threshold`用以設置該亮度門檻，`eyes_detection_brightness_value`為一個一維陣列list[int[], int[]]，用以設定眼睛bounding box的二值化參數。
 ```json=
 {
   ...
@@ -310,28 +314,27 @@ The system configuration file includes two parameters: `eyes_detection_brightnes
   }
 }
 ```
-If the current average brightness exceeds the set threshold, `eyes_detection_brightness_value[0]`will be the current threshold; otherwise, if it is below the average brightness threshold, `eyes_detection_brightness_value[1]`will be used as the current threshold. This method is not ideal because changes in ambient light are often hard to control, but I plan to improve this functionality in the future. For now, the current settings can handle indoor environments with stable lighting and minimal shadow variations.
+若當前的平均亮度大於所設定的平均亮度門檻時，則eyes_detection_brightness_value[0]會是當前的門檻；反之，小於平均亮度門檻，擇eyes_detection_brightness_value[1]會是當前的門檻。這樣的方式並不好，因為環境光的改變通常是較難控制的因素，這在未來我將會繼續改進該功能，但目前的設定已經可以應對一些室內明亮並且無太大光影變化的環境。
 ![image](./assets/images/5_four_eyes.png)
-Through real tests, we can observe the preprocessing results when eyes are open or closed. Based on known human behavior, the normal blink time is about 250ms. With a 30FPS camera, each frame is approximately 33.3333ms, so there will be around 7-8 frames per blink.
+實際測試眼睛在睜眼與閉眼時的前處理結果，透過物理的已知，人類在正常的眨眼時間約250ms，以30FPS攝影機做計算，每幀約33.3333ms，故我們可以得到每一次眨眼約會有7~8幀的變化。
 ![眨眼判斷流程圖](./assets/images/6_processing.png)
-By processing frame by frame and calculating over 16 consecutive frames (the time for one blink and reopen), we can clearly observe the blink action.
-
+透過逐幀除理的方式，計算連續16幀(也就是一次的眨眼與睜眼的時間) 我們就可以很明顯地看出眨眼的動作變化。
 
 ## Tests
 
-To ensure each functional module operates as expected and to prevent logical errors, calculation mistakes, or improper data structure handling during development, unit tests are executed using Unittest for every development cycle:
+為確保每個功能模組依預期運作，並避免開發過程中出現邏輯錯誤、計算錯誤或資料結構處理不當，每次開發時，以 Unittest 進行單元測試：
 
 ![image](./assets/images/7_core_unittest.png)
 
-The test coverage includes validation of computational results and data types for each sub-module, ensuring not only correctness under normal conditions but also system stability and predictable behavior under abnormal scenarios.
+測試內容涵蓋每個子功能的運算結果與資料型態驗證，不僅確保系統在正常操作下的正確性，也保障在異常情況下的穩定性與可預期行為。
 
 ## Run in FastAPI Mode
 
-Before getting started, please install Docker and Docker Compose, as the MinIO S3 service will be launched using Docker.
+開始之前，請先安裝 Docker 與 Docker-compose 環境，MinIO S3 會以 Docker 的方式啟動。
 
 ### Install and Start Minio S3
 
-> Reference GitHub: [minio](https://github.com/minio/minio)
+> 參考 GitHub: [minio](https://github.com/minio/minio)
 
 Docker pull
 
@@ -339,14 +342,14 @@ Docker pull
 sudo docker pull quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z
 ```
 
-Create a MinIO S3 local static directory
+建立 MinIO S3 本地靜態目錄
 
 ```bash
 mkdir /minio
 ```
 
-Run MinIO S3 using Docker-compose
-Set the root user and password
+透過 Docker-compose 執行 MinIO S3
+設定 root user 與 password
 
 ```yaml
 version: "3.8"
@@ -372,16 +375,14 @@ services:
 sudo docker-compose up
 ```
 
-Initialize Buckets
-
+初始化建立 Buckets
 ```bash
 uv run python3 app_server/utils/create_buckets.py
 ```
 
-### Environment Settings
+### 環境設定
 
-FastAPI environment variables can be configured via a `.env` file, where SERVER_ENDPOINT and the `External Log Server` correspond to the endpoint and API URL used when integrating with [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem).
-
+透過 `.env` 可以設定 FastAPI 環境變數，其中 SERVER_ENDPOINT 與 `External Log Server` 為 [FaceRecoSystem](https://github.com/JiangXiu11200/FaceRecoSystem) 啟用時的 Endpoint 與 API URL。
 
 ```
 # Server Configuration
@@ -424,25 +425,27 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
 ### Tests
 
-To ensure the stability and security of the system’s API under various scenarios, we have implemented comprehensive unit and integration tests, covering:
+為確保本系統 API 在各種情境下的穩定性與安全性，我們建立了完整的單元與整合測試，涵蓋：
 
-- Positive Testing: Verify that the API behaves as expected with valid inputs.
-- Negative Testing: Check that abnormal or erroneous inputs are safely handled.
-- Monkey Testing: Test the system’s robustness using random or unexpected data, ensuring it does not crash due to unforeseen inputs.
+- 正向測試：驗證 API 在正常輸入下是否如預期運作。
+- 反向測試：檢查異常或錯誤輸入是否被安全處理。
+- Monkey 測試：透過隨機或非預期資料測試系統魯棒性，確保不因意外輸入而崩潰。
 
-Through these tests, the API’s functionality and system stability can be continuously validated throughout the development process.
+透過這些測試，API 在開發過程中可以持續驗證功能正確性與系統穩定性。
 
 ![Image](./assets/images/8_app_server_unittest.png)
 
-### License
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
-### Third-party Libraries
+## 授權條款
 
-This project uses the following third-party libraries:
+此專案採用 MIT 授權條款，詳情請參閱 [LICENSE](LICENSE) 。
 
-- [MediaPipe](https://github.com/google/mediapipe): Licensed under the Apache License 2.0.
-- [dlib](http://dlib.net/): Licensed under the Boost Software License 1.0.
-- [minio](https://github.com/minio/minio)： Licensed under the AGPL-3.0 License.
+### 第三方函式庫
 
-Please refer to their respective licenses for details.
+此專案使用以下第三方函式庫：
+
+- [MediaPipe](https://github.com/google/mediapipe)：採用 Apache 2.0 授權條款。
+- [dlib](http://dlib.net/)：採用 Boost Software License 1.0 授權條款。
+- [minio](https://github.com/minio/minio)：採用 AGPL-3.0 License 授權條款。
+
+請參閱各自的授權條款以了解詳細資訊。
